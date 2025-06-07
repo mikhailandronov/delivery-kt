@@ -11,4 +11,5 @@ plugins {
 }
 
 rootProject.name = "delivery-kt"
-include("app")
+include(":app")
+include(":api")
