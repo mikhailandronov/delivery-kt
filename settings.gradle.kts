@@ -23,3 +23,5 @@ includeBuild("build-logic")
 rootProject.name = "delivery-kt"
 include(":app")
 include(":api")
+include(":core")
+include(":infrastructure")

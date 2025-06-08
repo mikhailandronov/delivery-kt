@@ -1,13 +1,13 @@
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 
 // Эта строка применит плагин kotlin("jvm") к любому подпроекту,
-// использующему `id("my-kotlin-library-convention")`
+// использующему `id("kotlin-basic-convention")`
 plugins {
     kotlin("jvm")
 }
 
 // Эти строки настроят jvmToolchain для любого подпроекта,
-// использующему `id("kotlin-basic-convention")`
+// использующего `id("kotlin-basic-convention")`
 extensions.configure<KotlinJvmProjectExtension> {
     jvmToolchain(21)
 }
