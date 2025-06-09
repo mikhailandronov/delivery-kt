@@ -3,12 +3,67 @@
  */
 package org.ama.delivery.app
 
-import kotlin.test.Test
-import kotlin.test.assertNotNull
+import io.kotest.core.spec.style.DescribeSpec
+import io.kotest.core.spec.style.FunSpec
+import io.kotest.core.spec.style.StringSpec
+import io.kotest.matchers.equals.shouldBeEqual
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldEndWith
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Test
 
 class AppTest {
-    @Test fun appHasAGreeting() {
+    @Test
+    fun appHasAGreeting() {
         val classUnderTest = App()
         assertNotNull(classUnderTest.greeting, "app should have a greeting")
     }
 }
+
+class AppTestFunSpec : FunSpec({
+    val app = App()
+
+    context("greeting") {
+        test("app should have a greeting") {
+            app.greeting shouldNotBe null
+        }
+
+        test("greeting should contain 'Hello'") {
+            app.greeting shouldContain "Hello"
+        }
+
+        test("greeting should be exclamation") {
+            app.greeting shouldEndWith "!"
+        }
+    }
+    context("addressee") {
+        test("app should address the whole World") {
+            app.greeting shouldContain "World"
+        }
+    }
+}
+)
+
+class AppTestStringSpec : StringSpec({
+    val app = App()
+    "app greeting should be 'Hello World!"{
+        app.greeting shouldBeEqual "Hello World!"
+    }
+}
+)
+
+class AppTestDescribeSpec : DescribeSpec({
+    describe("app greeting"){
+        val greeting = App().greeting
+        it("should have length of 12"){
+            greeting.length shouldBe 12
+        }
+        it("should be 'Hello World!"){
+            greeting shouldBe "Hello World!"
+        }
+    }
+}
+)
