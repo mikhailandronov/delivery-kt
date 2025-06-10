@@ -3,6 +3,7 @@
  */
 package org.ama.delivery.app
 
+import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.core.spec.style.StringSpec
@@ -43,26 +44,46 @@ class AppTestFunSpec : FunSpec({
             app.greeting shouldContain "World"
         }
     }
-}
-)
+})
 
 class AppTestStringSpec : StringSpec({
     val app = App()
-    "app greeting should be 'Hello World!"{
+    "app greeting should be 'Hello World!" {
         app.greeting shouldBeEqual "Hello World!"
     }
-}
-)
+})
 
 class AppTestDescribeSpec : DescribeSpec({
-    describe("app greeting"){
+    describe("app greeting") {
         val greeting = App().greeting
-        it("should have length of 12"){
+        it("should have length of 12") {
             greeting.length shouldBe 12
         }
-        it("should be 'Hello World!"){
+        it("should be 'Hello World!") {
             greeting shouldBe "Hello World!"
         }
     }
-}
-)
+})
+
+class AppTestBehaviorSpec : BehaviorSpec({
+    context("app should greet the world") {
+        given("an app object") {
+            val app = App()
+            and("my name") {
+                val name = "Mikhail"
+                When("called for greeting") {
+                    val greeting = app.greeting
+                    then("it should provide a greeting") {
+                        greeting shouldNotBe null
+                    }
+                    then("the greeting should be 'Hello World!'") {
+                        greeting shouldBe "Hello World!"
+                    }
+                    then("my personal greeting should be built"){
+                        greeting.replace("World", name) shouldBe "Hello Mikhail!"
+                    }
+                }
+            }
+        }
+    }
+})
