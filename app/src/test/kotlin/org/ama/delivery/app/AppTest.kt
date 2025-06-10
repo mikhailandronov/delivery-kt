@@ -3,6 +3,7 @@
  */
 package org.ama.delivery.app
 
+import io.kotest.core.annotation.Ignored
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.core.spec.style.FunSpec
@@ -13,6 +14,7 @@ import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldEndWith
 import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
 class AppTest {
@@ -23,6 +25,7 @@ class AppTest {
     }
 }
 
+@Ignored("Dummy test to check Kotest framework")
 class AppTestFunSpec : FunSpec({
     val app = App()
 
@@ -39,6 +42,7 @@ class AppTestFunSpec : FunSpec({
             app.greeting shouldEndWith "!"
         }
     }
+
     context("addressee") {
         test("app should address the whole World") {
             app.greeting shouldContain "World"
@@ -46,6 +50,7 @@ class AppTestFunSpec : FunSpec({
     }
 })
 
+@Ignored("Dummy test to check Kotest framework")
 class AppTestStringSpec : StringSpec({
     val app = App()
     "app greeting should be 'Hello World!" {
@@ -53,6 +58,7 @@ class AppTestStringSpec : StringSpec({
     }
 })
 
+@Ignored("Dummy test to check Kotest framework")
 class AppTestDescribeSpec : DescribeSpec({
     describe("app greeting") {
         val greeting = App().greeting
@@ -65,6 +71,7 @@ class AppTestDescribeSpec : DescribeSpec({
     }
 })
 
+@Ignored("Dummy test to check Kotest framework")
 class AppTestBehaviorSpec : BehaviorSpec({
     context("app should greet the world") {
         given("an app object") {
