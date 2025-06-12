@@ -1,6 +1,5 @@
 package org.ama.delivery.core.domain.common
 
-import arrow.core.Either
 import arrow.core.getOrElse
 import arrow.core.raise.either
 import arrow.core.raise.ensure
@@ -24,12 +23,12 @@ data class Location internal constructor(
         fun maxLocation() = Location(10, 10)
 
         fun from(x: Int, y: Int) = either<LocationError, Location> {
-            ensure( // require() ?
+            ensure(
                 x >= minLocation().xToInt() &&
                         x <= maxLocation().xToInt()
             ) { LocationError.IncorrectCoordinates(x, y) }
 
-            ensure( // require() ?
+            ensure(
                 y >= minLocation().yToInt() &&
                         y <= maxLocation().yToInt()
             ) { LocationError.IncorrectCoordinates(x, y) }
