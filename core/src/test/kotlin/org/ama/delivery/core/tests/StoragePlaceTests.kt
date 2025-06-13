@@ -41,7 +41,7 @@ class StoragePlaceTests : BehaviorSpec({
         }
     }
     context("checking ability to store") {
-        given("a storage place") {
+        given("an empty storage place") {
             val place = StoragePlace.create("Test place", 10).shouldBeRight()
 
             When("try to store incorrect volume") {
