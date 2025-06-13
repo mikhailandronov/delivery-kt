@@ -20,7 +20,8 @@ sealed class StoragePlaceError {
     data class IncorrectName(val name: String) : StoragePlaceError()
     data class IncorrectVolume(val volume: Int) : StoragePlaceError()
     data class ExcessiveVolume(val volume: Int): StoragePlaceError()
-    data object StorageIsBusy: StoragePlaceError()
+    data object StorageIsOccupied: StoragePlaceError()
+    data object StorageIsEmpty: StoragePlaceError()
     data object StoringNotConfirmed: StoragePlaceError()
 }
 
@@ -74,7 +75,7 @@ private constructor(
         val canStore = canStore(volume).bind()
         if (!canStore) {
             ensure(isEmpty()) {
-                StoragePlaceError.StorageIsBusy
+                StoragePlaceError.StorageIsOccupied
             }
 
             ensure(volume <= maxVolume()) {
@@ -85,5 +86,14 @@ private constructor(
 
         this@StoragePlace.orderId = orderId
         this@StoragePlace.occupiedVolume = volume
+    }
+
+    fun extract() = either<StoragePlaceError, Unit> {
+        ensure(!isEmpty()) {
+            StoragePlaceError.StorageIsEmpty
+        }
+
+        this@StoragePlace.orderId = null
+        this@StoragePlace.occupiedVolume = 0
     }
 }
