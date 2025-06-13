@@ -1,6 +1,7 @@
 package org.ama.delivery.core.domain.entities
 
 import arrow.core.raise.either
+import arrow.core.raise.ensure
 import org.ama.delivery.core.domain.common.BaseUuidId
 import org.ama.delivery.core.domain.common.Entity
 import org.ama.delivery.core.domain.common.UuidIdFactory
@@ -16,8 +17,9 @@ private constructor(id: UUID) : BaseUuidId(id) {
 
 
 sealed class StoragePlaceError {
-    data class IncorrectVolume(val volume: Int) : StoragePlaceError()
     data class IncorrectName(val name: String) : StoragePlaceError()
+    data class IncorrectVolume(val volume: Int) : StoragePlaceError()
+    data class ExcessiveVolume(val volume: Int): StoragePlaceError()
 }
 
 
@@ -26,7 +28,7 @@ private constructor(
     private val id: StoragePlaceId,
     val name: String,
     val maxVolume: Int,
-    var orderId: OrderId? = null
+    private var orderId: OrderId? = null
 ) : Entity<StoragePlaceId> {
 
     override fun id() = id
@@ -35,19 +37,32 @@ private constructor(
     fun maxVolume() = maxVolume
     fun orderId() = orderId
 
+    fun isEmpty() = orderId() == null
+
     companion object {
+
         fun create(name: String, maxVolume: Int) = either<StoragePlaceError, StoragePlace>{
-            if (name.isBlank()) raise(StoragePlaceError.IncorrectName(name))
-            if (maxVolume <= 0) raise(StoragePlaceError.IncorrectVolume(maxVolume))
+            ensure(name.isNotBlank()){
+                StoragePlaceError.IncorrectName(name)
+            }
+
+            ensure(maxVolume > 0) {
+                StoragePlaceError.IncorrectVolume(maxVolume)
+            }
 
             val newId = StoragePlaceId.new()
             StoragePlace(newId, name, maxVolume)
         }
-
         internal fun reconstitute(id: StoragePlaceId, name: String, maxVolume: Int): StoragePlace {
             return StoragePlace(id, name, maxVolume)
         }
     }
 
+    fun canStore(volume: Int) = either <StoragePlaceError, Boolean> {
+        ensure (volume > 0){
+            StoragePlaceError.IncorrectVolume(volume)
+        }
 
+        isEmpty() && volume <= maxVolume()
+    }
 }

@@ -4,6 +4,7 @@ import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.matchers.shouldBe
+import org.ama.delivery.core.domain.entities.OrderId
 import org.ama.delivery.core.domain.entities.StoragePlace
 import org.ama.delivery.core.domain.entities.StoragePlaceError
 
@@ -39,9 +40,37 @@ class StoragePlaceTests : BehaviorSpec({
             }
         }
     }
+    context("checking ability to store") {
+        given("a storage place") {
+            val place = StoragePlace.create("Test place", 10).shouldBeRight()
+
+            When("try to store incorrect volume") {
+                val incorrectVolume = -2
+                then("an error should be returned") {
+                    place.canStore(incorrectVolume)
+                        .shouldBeLeft(StoragePlaceError.IncorrectVolume(incorrectVolume))
+                }
+            }
+            When("try to store excessive volume") {
+                val excessiveVolume = 11
+                then("should return false") {
+                    val result = place.canStore(excessiveVolume).shouldBeRight()
+                    result shouldBe false
+                }
+            }
+            When("try to store correct volume") {
+                val correctVolume = 9
+                then("should return true") {
+                    val result = place.canStore(correctVolume).shouldBeRight()
+                    result shouldBe true
+                }
+            }
+        }
+    }
     context("storing items") {
 
     }
+
     context("extracting items") {
 
     }
