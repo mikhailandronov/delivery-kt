@@ -20,6 +20,8 @@ sealed class StoragePlaceError {
     data class IncorrectName(val name: String) : StoragePlaceError()
     data class IncorrectVolume(val volume: Int) : StoragePlaceError()
     data class ExcessiveVolume(val volume: Int): StoragePlaceError()
+    data object StorageIsBusy: StoragePlaceError()
+    data object StoringNotConfirmed: StoragePlaceError()
 }
 
 
@@ -28,7 +30,8 @@ private constructor(
     private val id: StoragePlaceId,
     val name: String,
     val maxVolume: Int,
-    private var orderId: OrderId? = null
+    private var orderId: OrderId? = null,
+    private var occupiedVolume: Int = 0
 ) : Entity<StoragePlaceId> {
 
     override fun id() = id
@@ -36,6 +39,7 @@ private constructor(
     fun name() = name
     fun maxVolume() = maxVolume
     fun orderId() = orderId
+    fun occupiedVolume() = occupiedVolume
 
     fun isEmpty() = orderId() == null
 
@@ -64,5 +68,22 @@ private constructor(
         }
 
         isEmpty() && volume <= maxVolume()
+    }
+
+    fun store(orderId: OrderId, volume: Int) = either<StoragePlaceError, Unit> {
+        val canStore = canStore(volume).bind()
+        if (!canStore) {
+            ensure(isEmpty()) {
+                StoragePlaceError.StorageIsBusy
+            }
+
+            ensure(volume <= maxVolume()) {
+                StoragePlaceError.ExcessiveVolume(volume)
+            }
+            raise(StoragePlaceError.StoringNotConfirmed)
+        }
+
+        this@StoragePlace.orderId = orderId
+        this@StoragePlace.occupiedVolume = volume
     }
 }

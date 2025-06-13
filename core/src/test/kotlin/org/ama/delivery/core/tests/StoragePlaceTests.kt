@@ -44,21 +44,21 @@ class StoragePlaceTests : BehaviorSpec({
         given("an empty storage place") {
             val place = StoragePlace.create("Test place", 10).shouldBeRight()
 
-            When("try to store incorrect volume") {
+            When("check storage with incorrect volume") {
                 val incorrectVolume = -2
                 then("an error should be returned") {
                     place.canStore(incorrectVolume)
                         .shouldBeLeft(StoragePlaceError.IncorrectVolume(incorrectVolume))
                 }
             }
-            When("try to store excessive volume") {
+            When("check storage with excessive volume") {
                 val excessiveVolume = 11
                 then("should return false") {
                     val result = place.canStore(excessiveVolume).shouldBeRight()
                     result shouldBe false
                 }
             }
-            When("try to store correct volume") {
+            When("check storage with correct volume") {
                 val correctVolume = 9
                 then("should return true") {
                     val result = place.canStore(correctVolume).shouldBeRight()
@@ -68,7 +68,41 @@ class StoragePlaceTests : BehaviorSpec({
         }
     }
     context("storing items") {
+        given("an empty storage place and order id"){
+            val place = StoragePlace.create("Test place", 10).shouldBeRight()
+            val orderId = OrderId.new()
 
+            When("try to store incorrect volume") {
+                val incorrectVolume = -2
+                then("an error should be returned") {
+                    place.store(orderId, incorrectVolume)
+                        .shouldBeLeft(StoragePlaceError.IncorrectVolume(incorrectVolume))
+                }
+            }
+            When("try to store excessive volume") {
+                val excessiveVolume = 11
+                then("an error should be returned") {
+                    place.store(orderId, excessiveVolume)
+                        .shouldBeLeft(StoragePlaceError.ExcessiveVolume(excessiveVolume))
+                }
+            }
+            When("try to store correct volume") {
+                val correctVolume = 9
+                then("should store it successfully") {
+                    place.store(orderId, correctVolume).shouldBeRight()
+                    place.occupiedVolume() shouldBe correctVolume
+                }
+            }
+            When("try to store to busy storage place") {
+                val storedVolume = place.occupiedVolume()
+                val additionalVolume = 9
+                then("an error should be returned, no changes") {
+                    place.store(orderId, additionalVolume)
+                        .shouldBeLeft(StoragePlaceError.StorageIsBusy)
+                    place.occupiedVolume() shouldBe storedVolume
+                }
+            }
+        }
     }
 
     context("extracting items") {
