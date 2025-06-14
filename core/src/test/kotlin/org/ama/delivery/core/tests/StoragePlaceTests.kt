@@ -3,6 +3,8 @@ package org.ama.delivery.core.tests
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.assertions.arrow.core.shouldBeRight
+import io.kotest.matchers.equals.shouldBeEqual
+import io.kotest.matchers.equals.shouldNotBeEqual
 import io.kotest.matchers.shouldBe
 import org.ama.delivery.core.domain.entities.OrderId
 import org.ama.delivery.core.domain.entities.StoragePlace
@@ -128,6 +130,33 @@ class StoragePlaceTests : BehaviorSpec({
                         place.isEmpty() shouldBe true
                         place.occupiedVolume() shouldBe 0
                     }
+            }
+        }
+    }
+
+    context("equality check") {
+        given("three entities: place1 == place2 != place3") {
+            val place1 = StoragePlace.create("Place1", 10).shouldBeRight()
+            val place2 = StoragePlace.reconstitute(
+                place1.id(), place1.name, place1.maxVolume
+            ).shouldBeRight()
+            val place3 = StoragePlace.create("Place3", 10)
+
+            When("ids are equal") {
+                then("place1 should be equal to place2") {
+                    place1 shouldBeEqual place2
+                }
+                then("place1 and place2 hash-codes should be equal") {
+                    place1.hashCode() shouldBeEqual place2.hashCode()
+                }
+            }
+            When("ids are not equal") {
+                then("place2 should not be equal to place3") {
+                    place2 shouldNotBeEqual place3
+                }
+                then("place2 and place3 hash-codes should not be equal") {
+                    place2.hashCode() shouldNotBeEqual place3.hashCode()
+                }
             }
         }
     }

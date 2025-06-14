@@ -28,9 +28,6 @@ private constructor(
 ) : Entity<StoragePlaceId> {
 
     override fun id() = id
-
-    fun name() = name
-    fun maxVolume() = maxVolume
     fun orderId() = orderId
     fun occupiedVolume() = occupiedVolume
 
@@ -50,8 +47,17 @@ private constructor(
             val newId = StoragePlaceId()
             StoragePlace(newId, name, maxVolume)
         }
-        internal fun reconstitute(id: StoragePlaceId, name: String, maxVolume: Int): StoragePlace {
-            return StoragePlace(id, name, maxVolume)
+
+        internal fun reconstitute(id: StoragePlaceId, name: String, maxVolume: Int)= either<StoragePlaceError, StoragePlace> {
+            ensure(name.isNotBlank()){
+                StoragePlaceError.IncorrectName(name)
+            }
+
+            ensure(maxVolume > 0) {
+                StoragePlaceError.IncorrectVolume(maxVolume)
+            }
+
+            StoragePlace(id, name, maxVolume)
         }
     }
 
@@ -60,7 +66,7 @@ private constructor(
             StoragePlaceError.IncorrectVolume(volume)
         }
 
-        isEmpty() && volume <= maxVolume()
+        isEmpty() && volume <= maxVolume
     }
 
     fun store(orderId: OrderId, volume: Int) = either<StoragePlaceError, Unit> {
@@ -70,7 +76,7 @@ private constructor(
                 StoragePlaceError.StorageIsOccupied
             }
 
-            ensure(volume <= maxVolume()) {
+            ensure(volume <= maxVolume) {
                 StoragePlaceError.ExcessiveVolume(volume)
             }
             raise(StoragePlaceError.StoringNotConfirmed)
@@ -87,5 +93,12 @@ private constructor(
 
         this@StoragePlace.orderId = null
         this@StoragePlace.occupiedVolume = 0
+    }
+
+    override fun hashCode() = id.hashCode()
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is StoragePlace) return false
+        return id() == other.id()
     }
 }
