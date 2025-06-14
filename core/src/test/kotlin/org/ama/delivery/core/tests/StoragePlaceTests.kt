@@ -72,7 +72,7 @@ class StoragePlaceTests : BehaviorSpec({
     context("storing items") {
         given("an empty storage place and order id") {
             val place = StoragePlace.create("Test place", 10).shouldBeRight()
-            val orderId = OrderId.new()
+            val orderId = OrderId()
 
             When("try to store incorrect volume") {
                 val incorrectVolume = -2
@@ -110,7 +110,7 @@ class StoragePlaceTests : BehaviorSpec({
     context("extracting items") {
         given("an occupied storage place") {
             val place = StoragePlace.create("Test place", 10).shouldBeRight()
-            val orderId = OrderId.new()
+            val orderId = OrderId()
             place.store(orderId, 10).shouldBeRight()
 
             When("try to extract item from occupied storage") {

@@ -2,19 +2,11 @@ package org.ama.delivery.core.domain.entities
 
 import arrow.core.raise.either
 import arrow.core.raise.ensure
-import org.ama.delivery.core.domain.common.BaseUuidId
 import org.ama.delivery.core.domain.common.Entity
-import org.ama.delivery.core.domain.common.UuidIdFactory
+import org.ama.delivery.core.domain.common.AbstractUuidId
 import java.util.UUID
 
-
-class StoragePlaceId
-private constructor(id: UUID) : BaseUuidId(id) {
-    companion object : UuidIdFactory<StoragePlaceId> {
-        override fun from(id: UUID) = StoragePlaceId(id)
-    }
-}
-
+class StoragePlaceId(value: UUID = UUID.randomUUID()) : AbstractUuidId(value)
 
 sealed class StoragePlaceError {
     data class IncorrectName(val name: String) : StoragePlaceError()
@@ -55,7 +47,7 @@ private constructor(
                 StoragePlaceError.IncorrectVolume(maxVolume)
             }
 
-            val newId = StoragePlaceId.new()
+            val newId = StoragePlaceId()
             StoragePlace(newId, name, maxVolume)
         }
         internal fun reconstitute(id: StoragePlaceId, name: String, maxVolume: Int): StoragePlace {
