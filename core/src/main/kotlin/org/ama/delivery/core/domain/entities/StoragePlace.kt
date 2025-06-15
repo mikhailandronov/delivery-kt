@@ -11,10 +11,10 @@ class StoragePlaceId(value: UUID = UUID.randomUUID()) : AbstractUuidId(value)
 sealed class StoragePlaceError {
     data class IncorrectName(val name: String) : StoragePlaceError()
     data class IncorrectVolume(val volume: Int) : StoragePlaceError()
-    data class ExcessiveVolume(val volume: Int): StoragePlaceError()
-    data object StorageIsOccupied: StoragePlaceError()
-    data object StorageIsEmpty: StoragePlaceError()
-    data object StoringNotConfirmed: StoragePlaceError()
+    data class ExcessiveVolume(val volume: Int) : StoragePlaceError()
+    data object StorageIsOccupied : StoragePlaceError()
+    data object StorageIsEmpty : StoragePlaceError()
+    data object StoringNotConfirmed : StoragePlaceError()
 }
 
 
@@ -35,8 +35,8 @@ private constructor(
 
     companion object {
 
-        fun create(name: String, maxVolume: Int) = either<StoragePlaceError, StoragePlace>{
-            ensure(name.isNotBlank()){
+        fun create(name: String, maxVolume: Int) = either<StoragePlaceError, StoragePlace> {
+            ensure(name.isNotBlank()) {
                 StoragePlaceError.IncorrectName(name)
             }
 
@@ -48,8 +48,11 @@ private constructor(
             StoragePlace(newId, name, maxVolume)
         }
 
-        internal fun reconstitute(id: StoragePlaceId, name: String, maxVolume: Int)= either<StoragePlaceError, StoragePlace> {
-            ensure(name.isNotBlank()){
+        internal fun reconstitute(
+            id: StoragePlaceId, name: String, maxVolume: Int
+        ) = either<StoragePlaceError, StoragePlace> {
+
+            ensure(name.isNotBlank()) {
                 StoragePlaceError.IncorrectName(name)
             }
 
@@ -61,8 +64,8 @@ private constructor(
         }
     }
 
-    fun canStore(volume: Int) = either <StoragePlaceError, Boolean> {
-        ensure (volume > 0){
+    fun canStore(volume: Int) = either<StoragePlaceError, Boolean> {
+        ensure(volume > 0) {
             StoragePlaceError.IncorrectVolume(volume)
         }
 
@@ -79,6 +82,7 @@ private constructor(
             ensure(volume <= maxVolume) {
                 StoragePlaceError.ExcessiveVolume(volume)
             }
+
             raise(StoragePlaceError.StoringNotConfirmed)
         }
 
@@ -96,6 +100,7 @@ private constructor(
     }
 
     override fun hashCode() = id.hashCode()
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is StoragePlace) return false
