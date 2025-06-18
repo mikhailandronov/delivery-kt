@@ -4,12 +4,12 @@ import arrow.core.raise.either
 import arrow.core.raise.ensure
 import org.ama.delivery.core.domain.common.Entity
 import org.ama.delivery.core.domain.common.AbstractUuidId
+import org.ama.delivery.core.domain.common.Name
 import java.util.UUID
 
 class StoragePlaceId(value: UUID = UUID.randomUUID()) : AbstractUuidId(value)
 
 sealed class StoragePlaceError {
-    data class IncorrectName(val name: String) : StoragePlaceError()
     data class IncorrectVolume(val volume: Int) : StoragePlaceError()
     data class ExcessiveVolume(val volume: Int) : StoragePlaceError()
     data object StorageIsOccupied : StoragePlaceError()
@@ -21,7 +21,7 @@ sealed class StoragePlaceError {
 class StoragePlace
 private constructor(
     private val id: StoragePlaceId,
-    val name: String,
+    val name: Name,
     val maxVolume: Int,
     private var orderId: OrderId? = null,
     private var occupiedVolume: Int = 0
@@ -35,11 +35,7 @@ private constructor(
 
     companion object {
 
-        fun create(name: String, maxVolume: Int) = either<StoragePlaceError, StoragePlace> {
-            ensure(name.isNotBlank()) {
-                StoragePlaceError.IncorrectName(name)
-            }
-
+        fun create(name: Name, maxVolume: Int) = either<StoragePlaceError, StoragePlace> {
             ensure(maxVolume > 0) {
                 StoragePlaceError.IncorrectVolume(maxVolume)
             }
@@ -49,13 +45,8 @@ private constructor(
         }
 
         internal fun reconstitute(
-            id: StoragePlaceId, name: String, maxVolume: Int
+            id: StoragePlaceId, name: Name, maxVolume: Int
         ) = either<StoragePlaceError, StoragePlace> {
-
-            ensure(name.isNotBlank()) {
-                StoragePlaceError.IncorrectName(name)
-            }
-
             ensure(maxVolume > 0) {
                 StoragePlaceError.IncorrectVolume(maxVolume)
             }
