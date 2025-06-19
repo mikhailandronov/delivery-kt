@@ -1,0 +1,94 @@
+package org.ama.delivery.core.tests
+
+import io.kotest.assertions.arrow.core.shouldBeLeft
+import io.kotest.assertions.arrow.core.shouldBeRight
+import io.kotest.core.spec.style.BehaviorSpec
+import io.kotest.matchers.equals.shouldBeEqual
+import io.kotest.matchers.shouldBe
+import org.ama.delivery.core.domain.common.Location
+import org.ama.delivery.core.domain.common.Name
+import org.ama.delivery.core.domain.common.Speed
+import org.ama.delivery.core.domain.entities.Courier
+import org.ama.delivery.core.domain.entities.CourierError
+import org.ama.delivery.core.domain.entities.CourierId
+
+class CourierTests: BehaviorSpec({
+    context("correct creation / reconstitution") {
+        given("name, speed, location"){
+            val name = Name.from("Test courier").shouldBeRight()
+            val speed = Speed.minSpeed()
+            val location = Location.minLocation()
+
+            When("courier is created"){
+                val created = Courier.create(name, speed, location).shouldBeRight()
+                then("it has correct attributes"){
+                    created.name shouldBeEqual name
+                    created.speed shouldBeEqual speed
+                    created.location() shouldBeEqual location
+                }
+                then("it has correct storage places"){
+                    val places = created.storagePlaces()
+                    val defaultVolume = 10
+                    places.size shouldBe 1
+                    places[0].maxVolume shouldBe defaultVolume
+                    places[0].name.toString() shouldBe "Сумка"
+                }
+            }
+
+            When("courier is restored with id"){
+                val id = CourierId()
+                val restored = Courier.reconstitute(id, name, speed, location).shouldBeRight()
+                then("it has correct attributes"){
+                    restored.id() shouldBeEqual id
+                    restored.name shouldBeEqual name
+                    restored.speed shouldBeEqual speed
+                    restored.location() shouldBeEqual location
+                }
+                then("it has no storage places"){
+                    restored.storagePlaces().isEmpty() shouldBe true
+                }
+            }
+        }
+    }
+    context("adding storage place") {
+        given("a newly created courier"){
+            val name = Name.from("Test courier").shouldBeRight()
+            val speed = Speed.minSpeed()
+            val location = Location.minLocation()
+            val courier = Courier.create(name, speed, location).shouldBeRight()
+
+            val correctPlaceName = Name.from("New place").shouldBeRight()
+            val correctVolume = 20
+            val incorrectVolume = -1
+
+            When("incorrect values are used to add a place"){
+                then("an error should be returned on adding"){
+                    courier.addStoragePlace(correctPlaceName, incorrectVolume)
+                        .shouldBeLeft(CourierError.CantAddStoragePlace)
+                }
+            }
+            When("correct values are used to add a place"){
+                then("a storage place is added successfully"){
+                    courier.addStoragePlace(correctPlaceName, correctVolume).shouldBeRight()
+                    val places = courier.storagePlaces()
+                    places.size shouldBe 2
+                    places[1].name shouldBe correctPlaceName
+                    places[1].maxVolume shouldBe correctVolume
+                }
+            }
+        }
+
+    }
+    context("taking order") {
+
+    }
+    context("completing order") {
+
+    }
+    context("calculating steps") {
+
+    }
+    context("moving a step towards location") {
+
+    }
+})
