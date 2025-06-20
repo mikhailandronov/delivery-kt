@@ -35,14 +35,9 @@ private constructor(
 
     companion object {
 
-        fun create(name: Name, maxVolume: Int) = either<StoragePlaceError, StoragePlace> {
-            ensure(maxVolume > 0) {
-                StoragePlaceError.IncorrectVolume(maxVolume)
-            }
-
-            val newId = StoragePlaceId()
-            StoragePlace(newId, name, maxVolume)
-        }
+        fun create(name: Name, maxVolume: Int) = reconstitute(
+            StoragePlaceId(), name, maxVolume
+        )
 
         internal fun reconstitute(
             id: StoragePlaceId, name: Name, maxVolume: Int

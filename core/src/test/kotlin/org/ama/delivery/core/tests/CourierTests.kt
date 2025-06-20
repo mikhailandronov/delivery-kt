@@ -11,6 +11,7 @@ import org.ama.delivery.core.domain.common.Speed
 import org.ama.delivery.core.domain.entities.Courier
 import org.ama.delivery.core.domain.entities.CourierError
 import org.ama.delivery.core.domain.entities.CourierId
+import org.ama.delivery.core.domain.entities.Order
 
 class CourierTests: BehaviorSpec({
     context("correct creation / reconstitution") {
@@ -37,7 +38,7 @@ class CourierTests: BehaviorSpec({
 
             When("courier is restored with id"){
                 val id = CourierId()
-                val restored = Courier.reconstitute(id, name, speed, location).shouldBeRight()
+                val restored = Courier.reconstitute(id, name, speed, location)
                 then("it has correct attributes"){
                     restored.id() shouldBeEqual id
                     restored.name shouldBeEqual name
@@ -79,15 +80,57 @@ class CourierTests: BehaviorSpec({
         }
 
     }
+
+    context("checking capacity") {
+        given("a courier with default storage place and two orders"){
+            val name = Name.from("Test courier").shouldBeRight()
+            val speed = Speed.minSpeed()
+            val location = Location.minLocation()
+            val courier = Courier.create(name, speed, location).shouldBeRight()
+
+            val orderFitsStorage = Order.create(Location.maxLocation(), 10).shouldBeRight()
+            val orderExceedsStorage = Order.create(Location.maxLocation(), 20).shouldBeRight()
+
+            When("free capacity is available for the order"){
+                then("courier can take order"){
+                    courier.canTakeOrder(orderFitsStorage) shouldBe true
+                }
+            }
+            When("order volume is larger than available capacity"){
+                then("courier can not take order"){
+                    courier.canTakeOrder(orderExceedsStorage) shouldBe false
+                }
+            }
+
+        }
+        given("a courier without storage place"){
+            val name = Name.from("Test courier").shouldBeRight()
+            val speed = Speed.minSpeed()
+            val location = Location.minLocation()
+            val courier = Courier.reconstitute(CourierId(), name, speed, location)
+
+            val order = Order.create(Location.maxLocation(), 1).shouldBeRight()
+
+            When("check with any order volume"){
+                then("courier can not take order"){
+                    courier.canTakeOrder(order) shouldBe false
+                }
+            }
+        }
+    }
+
     context("taking order") {
 
     }
+
     context("completing order") {
 
     }
+
     context("calculating steps") {
 
     }
+
     context("moving a step towards location") {
 
     }

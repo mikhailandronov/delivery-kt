@@ -33,8 +33,7 @@ private constructor(
     companion object {
 
         fun create(name: Name, speed: Speed, location: Location) = either<CourierError, Courier> {
-            val newId = CourierId()
-            val courier = Courier(newId, name, speed, location)
+            val courier = reconstitute(CourierId(), name, speed, location)
 
             val defaultStorageVolume = 10
             val defaultStorageName = withError({ err: NameError ->
@@ -48,9 +47,8 @@ private constructor(
 
         internal fun reconstitute(
             id: CourierId, name: Name, speed: Speed, location: Location
-        ) = either<CourierError, Courier> {
-            Courier(id, name, speed, location)
-        }
+        ) = Courier(id, name, speed, location)
+
     }
 
     fun addStoragePlace(name: Name, volume: Int) = either<CourierError, Unit> {
@@ -61,5 +59,8 @@ private constructor(
         }
         storagePlaces.add(newStoragePlace)
     }
+
+    fun canTakeOrder(order: Order): Boolean =
+        storagePlaces().find { it.isEmpty() && it.maxVolume >= order.volume } != null
 
 }
