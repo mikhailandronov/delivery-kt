@@ -185,8 +185,19 @@ class CourierTests: BehaviorSpec({
         }
     }
 
-    context("calculating steps") {
+    context("calculating time to location") {
+        given("a courier (location, speed) and another location"){
+            val courierName = Name.from("Test courier").shouldBeRight()
+            val speed = Speed.from(2).shouldBeRight()
+            val location = Location.from(1, 1).shouldBeRight()
+            val courier = Courier.create(courierName, speed, location).shouldBeRight()
+            val targetLocation = Location.from(5,5).shouldBeRight()
 
+            When("requested to calculate time to location"){
+                then("correct result is returned")
+                courier.calculateTimeToLocation(targetLocation).shouldBeRight(4)
+            }
+        }
     }
 
     context("moving a step towards location") {

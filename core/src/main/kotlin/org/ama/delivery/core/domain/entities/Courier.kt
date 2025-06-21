@@ -98,4 +98,10 @@ private constructor(
             orderStoragePlace.extract(order.id())
         }
     }
+
+    fun calculateTimeToLocation(targetLocation: Location) = either<CourierError, Double> {
+        val distance = location().distanceTo(targetLocation)
+        val time = distance.toDouble() / speed.toInt()
+        time
+    }
 }
