@@ -15,9 +15,10 @@ class CourierId(value: UUID = UUID.randomUUID()) : AbstractUuidId(value)
 
 sealed class CourierError {
     data object CantAddStoragePlace : CourierError()
-    object NoStoragePlaceAvailable : CourierError()
-    data class OrderVolumeExceedsAvailableStorage(val orderVolume: Int): CourierError()
+    object NoEmptyStoragePlace : CourierError()
+    data class OrderVolumeExceedsAvailableStorage(val orderVolume: Int) : CourierError()
     data class StoragePlaceOperationFailed(val err: StoragePlaceError) : CourierError()
+    data class OrderNotFoundInStorage(val order: Order) : CourierError()
 }
 
 class Courier
@@ -67,22 +68,34 @@ private constructor(
     fun canTakeOrder(order: Order): Boolean =
         storagePlaces().find { it.isEmpty() && it.maxVolume >= order.volume } != null
 
-    fun takeOrder(order: Order) = either <CourierError, Unit> {
+    fun takeOrder(order: Order) = either<CourierError, Unit> {
         val availablePlaces = storagePlaces().filter { it.isEmpty() }
-        ensure(availablePlaces.isNotEmpty()){
-            CourierError.NoStoragePlaceAvailable
+        ensure(availablePlaces.isNotEmpty()) {
+            CourierError.NoEmptyStoragePlace
         }
 
         val suitablePlaces = availablePlaces.filter { it.maxVolume >= order.volume }
-        ensure(suitablePlaces.isNotEmpty()){
+        ensure(suitablePlaces.isNotEmpty()) {
             CourierError.OrderVolumeExceedsAvailableStorage(order.volume)
         }
 
-        withError({err: StoragePlaceError ->
+        withError({ err: StoragePlaceError ->
             CourierError.StoragePlaceOperationFailed(err)
-        }){
+        }) {
             suitablePlaces.first().store(order.id(), order.volume)
         }
     }
 
+    fun completeOrder(order: Order) = either<CourierError, Unit> {
+        val orderStoragePlace = storagePlaces().find { it.orderId() == order.id() }
+        ensure(orderStoragePlace != null) {
+            CourierError.OrderNotFoundInStorage(order)
+        }
+
+        withError({ err: StoragePlaceError ->
+            CourierError.StoragePlaceOperationFailed(err)
+        }) {
+            orderStoragePlace.extract(order.id())
+        }
+    }
 }

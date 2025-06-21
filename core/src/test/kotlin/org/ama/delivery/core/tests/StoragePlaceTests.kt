@@ -56,7 +56,7 @@ class StoragePlaceTests : BehaviorSpec({
 
     context("checking ability to store") {
         given("an empty storage place") {
-            val name = Name.from("Test place").shouldBeRight ()
+            val name = Name.from("Test place").shouldBeRight()
             val place = StoragePlace.create(name, 10).shouldBeRight()
 
             When("check storage with incorrect volume") {
@@ -126,24 +126,34 @@ class StoragePlaceTests : BehaviorSpec({
         given("an occupied storage place") {
             val name = Name.from("Test place").shouldBeRight()
             val place = StoragePlace.create(name, 10).shouldBeRight()
-            val orderId = OrderId()
-            place.store(orderId, 10).shouldBeRight()
+            val correctOrderId = OrderId()
+            val incorrectOrderId = OrderId()
+            place.store(correctOrderId, 10).shouldBeRight()
+            place.isEmpty() shouldBe false
+            place.occupiedVolume() shouldBe 10
 
-            When("try to extract item from occupied storage") {
-                if (!place.isEmpty())
-                    then("should extract it successfully") {
-                        place.extract().shouldBeRight()
-                        place.isEmpty() shouldBe true
-                        place.occupiedVolume() shouldBe 0
-                    }
+            When("try to extract incorrect item from occupied storage") {
+                then("an error should be returned, no changes") {
+                    place.extract(incorrectOrderId).shouldBeLeft(
+                        StoragePlaceError.OrderNotStored(incorrectOrderId)
+                    )
+                    place.isEmpty() shouldBe false
+                    place.occupiedVolume() shouldBe 10
+                }
+            }
+            When("try to extract correct item from occupied storage") {
+                then("should extract it successfully") {
+                    place.extract(correctOrderId).shouldBeRight()
+                    place.isEmpty() shouldBe true
+                    place.occupiedVolume() shouldBe 0
+                }
             }
             When("try to extract item from empty storage") {
-                if (place.isEmpty())
-                    then("an error should be returned, no changes") {
-                        place.extract().shouldBeLeft(StoragePlaceError.StorageIsEmpty)
-                        place.isEmpty() shouldBe true
-                        place.occupiedVolume() shouldBe 0
-                    }
+                then("an error should be returned, no changes") {
+                    place.extract(correctOrderId).shouldBeLeft(StoragePlaceError.StorageIsEmpty)
+                    place.isEmpty() shouldBe true
+                    place.occupiedVolume() shouldBe 0
+                }
             }
         }
     }

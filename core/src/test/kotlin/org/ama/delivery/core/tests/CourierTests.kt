@@ -126,8 +126,8 @@ class CourierTests: BehaviorSpec({
             val location = Location.minLocation()
             val courier = Courier.create(courierName, speed, location).shouldBeRight()
 
-            val smallPlaceName = Name.from("Small place").shouldBeRight()
-            courier.addStoragePlace(smallPlaceName, 10).shouldBeRight()
+            val smallPlaceName = Name.from("Карман").shouldBeRight()
+            courier.addStoragePlace(smallPlaceName, 1).shouldBeRight()
 
             val orderFitsStorage = Order.create(Location.maxLocation(), 10).shouldBeRight()
             val orderExceedsStorage = Order.create(Location.maxLocation(), 20).shouldBeRight()
@@ -160,7 +160,29 @@ class CourierTests: BehaviorSpec({
     }
 
     context("completing order") {
+        given("a courier with order taken"){
+            val courierName = Name.from("Test courier").shouldBeRight()
+            val speed = Speed.minSpeed()
+            val location = Location.minLocation()
+            val courier = Courier.create(courierName, speed, location).shouldBeRight()
+            val correctOrder = Order.create(Location.maxLocation(), 10).shouldBeRight()
+            val incorrectOrder = Order.create(Location.maxLocation(), 10).shouldBeRight()
 
+            courier.takeOrder(correctOrder).shouldBeRight()
+
+            When("incorrect order completion requested"){
+                then("courier can't complete the order"){
+                    courier.completeOrder(incorrectOrder).shouldBeLeft(
+                        CourierError.OrderNotFoundInStorage(incorrectOrder)
+                    )
+                }
+            }
+            When("correct order completion requested"){
+                then("courier completes the order successfully"){
+                    courier.completeOrder(correctOrder).shouldBeRight()
+                }
+            }
+        }
     }
 
     context("calculating steps") {

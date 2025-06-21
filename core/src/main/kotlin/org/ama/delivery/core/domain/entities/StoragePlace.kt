@@ -12,9 +12,11 @@ class StoragePlaceId(value: UUID = UUID.randomUUID()) : AbstractUuidId(value)
 sealed class StoragePlaceError {
     data class IncorrectVolume(val volume: Int) : StoragePlaceError()
     data class ExcessiveVolume(val volume: Int) : StoragePlaceError()
+    data class OrderNotStored(val orderId: OrderId) : StoragePlaceError()
+
     data object StorageIsOccupied : StoragePlaceError()
     data object StorageIsEmpty : StoragePlaceError()
-    data object StoringNotConfirmed : StoragePlaceError()
+    data object StoringNotAllowed : StoragePlaceError()
 }
 
 
@@ -69,16 +71,20 @@ private constructor(
                 StoragePlaceError.ExcessiveVolume(volume)
             }
 
-            raise(StoragePlaceError.StoringNotConfirmed)
+            raise(StoragePlaceError.StoringNotAllowed)
         }
 
         this@StoragePlace.orderId = orderId
         this@StoragePlace.occupiedVolume = volume
     }
 
-    fun extract() = either<StoragePlaceError, Unit> {
+    fun extract(orderId: OrderId) = either<StoragePlaceError, Unit> {
         ensure(!isEmpty()) {
             StoragePlaceError.StorageIsEmpty
+        }
+
+        ensure(orderId() == orderId){
+            StoragePlaceError.OrderNotStored(orderId)
         }
 
         this@StoragePlace.orderId = null
