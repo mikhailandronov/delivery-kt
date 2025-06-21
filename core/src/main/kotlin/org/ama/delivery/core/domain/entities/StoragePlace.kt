@@ -43,9 +43,11 @@ private constructor(
         )
 
         internal fun reconstitute(
-            id: StoragePlaceId, name: Name, maxVolume: Volume
+            id: StoragePlaceId,
+            name: Name,
+            maxVolume: Volume
         ) = either<StoragePlaceError, StoragePlace> {
-            ensure(maxVolume.toInt() > 0) {
+            ensure(maxVolume > Volume.zeroVolume()) {
                 StoragePlaceError.IncorrectVolume(maxVolume)
             }
 
@@ -54,7 +56,7 @@ private constructor(
     }
 
     fun canStore(volume: Volume) = either<StoragePlaceError, Boolean> {
-        ensure(volume.toInt() > 0) {
+        ensure(volume > Volume.zeroVolume()) {
             StoragePlaceError.IncorrectVolume(volume)
         }
 

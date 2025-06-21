@@ -12,6 +12,8 @@ class OrderId(value: UUID = UUID.randomUUID()) : AbstractUuidId(value)
 
 sealed class OrderError {
     data class IncorrectVolume(val volume: Volume) : OrderError()
+    data class CantAssignInStatus(val status: OrderStatus) : OrderError()
+    data class CantCompleteInStatus(val status: OrderStatus) : OrderError()
 }
 
 class Order
@@ -29,7 +31,7 @@ private constructor(
 
     companion object {
         fun create(id: OrderId, destination: Location, volume: Volume) = either<OrderError, Order> {
-            ensure(volume.toInt() > 0){
+            ensure(volume > Volume.zeroVolume()){
                 OrderError.IncorrectVolume(volume)
             }
             val order = Order(id, destination, volume)
@@ -38,10 +40,18 @@ private constructor(
     }
 
     fun assign(courier: Courier) = either<OrderError, Unit>{
-
+        ensure(status() == OrderStatus.Created){
+            OrderError.CantAssignInStatus(status())
+        }
+        courierId = courier.id()
+        status = OrderStatus.Assigned
     }
 
     fun complete()= either<OrderError, Unit>{
-
+        ensure(status() == OrderStatus.Assigned){
+            OrderError.CantCompleteInStatus(status())
+        }
+        courierId = null
+        status = OrderStatus.Completed
     }
 }
