@@ -16,22 +16,22 @@ sealed class OrderError {
 class Order
 private constructor(
     private val id: OrderId,
-    val location: Location,
-    val volume: Int
+    val destination: Location,
+    val volume: Int,
+    private var status: OrderStatus = OrderStatus.Created,
+    private var courierId: CourierId? = null
 ) : AggregateRoot<OrderId> {
 
     override fun id() = id
+    fun status() = status
+    fun courierId() = courierId
 
     companion object {
-
-        fun create(location: Location, volume: Int)
-        = reconstitute(OrderId(), location, volume)
-
-        internal fun reconstitute(id: OrderId, location: Location, volume: Int) = either<OrderError, Order> {
+        fun create(id: OrderId, destination: Location, volume: Int) = either<OrderError, Order> {
             ensure(volume > 0){
                 OrderError.IncorrectVolume(volume)
             }
-            val order = Order(id, location, volume)
+            val order = Order(id, destination, volume)
             order
         }
     }
