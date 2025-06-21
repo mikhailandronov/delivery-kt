@@ -8,6 +8,7 @@ import io.kotest.matchers.shouldBe
 import org.ama.delivery.core.domain.common.Location
 import org.ama.delivery.core.domain.common.Name
 import org.ama.delivery.core.domain.common.Speed
+import org.ama.delivery.core.domain.common.Volume
 import org.ama.delivery.core.domain.entities.Courier
 import org.ama.delivery.core.domain.entities.CourierError
 import org.ama.delivery.core.domain.entities.CourierId
@@ -30,7 +31,7 @@ class CourierTests : BehaviorSpec({
                 }
                 then("it has correct storage places") {
                     val places = created.storagePlaces()
-                    val defaultVolume = 10
+                    val defaultVolume = Volume.from(10).shouldBeRight()
                     places.size shouldBe 1
                     places[0].maxVolume shouldBe defaultVolume
                     places[0].name.toString() shouldBe "Сумка"
@@ -60,8 +61,8 @@ class CourierTests : BehaviorSpec({
             val courier = Courier.create(name, speed, location).shouldBeRight()
 
             val correctPlaceName = Name.from("New place").shouldBeRight()
-            val correctVolume = 20
-            val incorrectVolume = -1
+            val correctVolume = Volume.from(20).shouldBeRight()
+            val incorrectVolume = Volume.zeroVolume()
 
             When("incorrect values are used to add a place") {
                 then("an error should be returned on adding") {
@@ -89,8 +90,10 @@ class CourierTests : BehaviorSpec({
             val location = Location.minLocation()
             val courier = Courier.create(name, speed, location).shouldBeRight()
 
-            val orderFitsStorage = Order.create(OrderId(), Location.maxLocation(), 10).shouldBeRight()
-            val orderExceedsStorage = Order.create(OrderId(), Location.maxLocation(), 20).shouldBeRight()
+            val volume10 = Volume.from(10).shouldBeRight()
+            val volume20 = Volume.from(20).shouldBeRight()
+            val orderFitsStorage = Order.create(OrderId(), Location.maxLocation(), volume10).shouldBeRight()
+            val orderExceedsStorage = Order.create(OrderId(), Location.maxLocation(), volume20).shouldBeRight()
 
             When("free capacity is available for the order") {
                 then("courier can take order") {
@@ -110,7 +113,8 @@ class CourierTests : BehaviorSpec({
             val location = Location.minLocation()
             val courier = Courier.reconstitute(CourierId(), name, speed, location)
 
-            val order = Order.create(OrderId(), Location.maxLocation(), 1).shouldBeRight()
+            val volume1 = Volume.from(1).shouldBeRight()
+            val order = Order.create(OrderId(), Location.maxLocation(), volume1).shouldBeRight()
 
             When("check with any order volume") {
                 then("courier can not take order") {
@@ -128,10 +132,13 @@ class CourierTests : BehaviorSpec({
             val courier = Courier.create(courierName, speed, location).shouldBeRight()
 
             val smallPlaceName = Name.from("Карман").shouldBeRight()
-            courier.addStoragePlace(smallPlaceName, 1).shouldBeRight()
+            val volume1 = Volume.from(1).shouldBeRight()
+            courier.addStoragePlace(smallPlaceName, volume1).shouldBeRight()
 
-            val orderFitsStorage = Order.create(OrderId(), Location.maxLocation(), 10).shouldBeRight()
-            val orderExceedsStorage = Order.create(OrderId(), Location.maxLocation(), 20).shouldBeRight()
+            val volume10 = Volume.from(10).shouldBeRight()
+            val volume20 = Volume.from(20).shouldBeRight()
+            val orderFitsStorage = Order.create(OrderId(), Location.maxLocation(), volume10).shouldBeRight()
+            val orderExceedsStorage = Order.create(OrderId(), Location.maxLocation(), volume20).shouldBeRight()
 
             When("storage place for first order is available") {
                 then("courier takes the order") {
@@ -166,8 +173,10 @@ class CourierTests : BehaviorSpec({
             val speed = Speed.minSpeed()
             val location = Location.minLocation()
             val courier = Courier.create(courierName, speed, location).shouldBeRight()
-            val correctOrder = Order.create(OrderId(), Location.maxLocation(), 10).shouldBeRight()
-            val incorrectOrder = Order.create(OrderId(), Location.maxLocation(), 10).shouldBeRight()
+            val volume10 = Volume.from(10).shouldBeRight()
+            val volume20 = Volume.from(20).shouldBeRight()
+            val correctOrder = Order.create(OrderId(), Location.maxLocation(), volume10).shouldBeRight()
+            val incorrectOrder = Order.create(OrderId(), Location.maxLocation(), volume20).shouldBeRight()
 
             courier.takeOrder(correctOrder).shouldBeRight()
 

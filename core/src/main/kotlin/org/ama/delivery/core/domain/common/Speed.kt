@@ -15,11 +15,10 @@ data class Speed internal constructor(
 
     companion object {
         fun minSpeed() = Speed(1)
-        fun zeroSpeed() = Speed(0)
 
         fun from(value: Int) = either<SpeedError, Speed> {
             ensure(
-                value >= zeroSpeed().toInt()
+                value >= minSpeed().toInt()
             ) { SpeedError.IncorrectSpeedValue(value) }
             Speed(value)
         }

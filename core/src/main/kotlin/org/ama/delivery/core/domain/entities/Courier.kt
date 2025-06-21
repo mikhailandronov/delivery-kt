@@ -10,6 +10,8 @@ import org.ama.delivery.core.domain.common.LocationError
 import org.ama.delivery.core.domain.common.Name
 import org.ama.delivery.core.domain.common.NameError
 import org.ama.delivery.core.domain.common.Speed
+import org.ama.delivery.core.domain.common.Volume
+import org.ama.delivery.core.domain.common.VolumeError
 import java.lang.Math.clamp
 import java.util.UUID
 import kotlin.math.abs
@@ -22,7 +24,7 @@ sealed class CourierError {
     data object NoEmptyStoragePlace : CourierError()
     data object MoveAttemptFailed : CourierError()
 
-    data class OrderVolumeExceedsAvailableStorage(val orderVolume: Int) : CourierError()
+    data class OrderVolumeExceedsAvailableStorage(val orderVolume: Volume) : CourierError()
     data class StoragePlaceOperationFailed(val err: StoragePlaceError) : CourierError()
     data class OrderNotFoundInStorage(val order: Order) : CourierError()
 }
@@ -46,12 +48,18 @@ private constructor(
         fun create(name: Name, speed: Speed, location: Location) = either<CourierError, Courier> {
             val courier = reconstitute(CourierId(), name, speed, location)
 
-            val defaultStorageVolume = 10
+            val defaultStorageVolume = withError({ err: VolumeError ->
+                CourierError.CantAddStoragePlace
+            }) {
+                Volume.from(10).bind()
+            }
+
             val defaultStorageName = withError({ err: NameError ->
                 CourierError.CantAddStoragePlace
             }) {
                 Name.from("Сумка").bind()
             }
+
             courier.addStoragePlace(defaultStorageName, defaultStorageVolume).bind()
             courier
         }
@@ -62,7 +70,7 @@ private constructor(
 
     }
 
-    fun addStoragePlace(name: Name, volume: Int) = either<CourierError, Unit> {
+    fun addStoragePlace(name: Name, volume: Volume) = either<CourierError, Unit> {
         val newStoragePlace = withError({ err: StoragePlaceError ->
             CourierError.CantAddStoragePlace
         }) {

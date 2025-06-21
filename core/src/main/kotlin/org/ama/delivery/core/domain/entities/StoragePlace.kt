@@ -5,13 +5,14 @@ import arrow.core.raise.ensure
 import org.ama.delivery.core.domain.common.Entity
 import org.ama.delivery.core.domain.common.AbstractUuidId
 import org.ama.delivery.core.domain.common.Name
+import org.ama.delivery.core.domain.common.Volume
 import java.util.UUID
 
 class StoragePlaceId(value: UUID = UUID.randomUUID()) : AbstractUuidId(value)
 
 sealed class StoragePlaceError {
-    data class IncorrectVolume(val volume: Int) : StoragePlaceError()
-    data class ExcessiveVolume(val volume: Int) : StoragePlaceError()
+    data class IncorrectVolume(val volume: Volume) : StoragePlaceError()
+    data class ExcessiveVolume(val volume: Volume) : StoragePlaceError()
     data class OrderNotStored(val orderId: OrderId) : StoragePlaceError()
 
     data object StorageIsOccupied : StoragePlaceError()
@@ -24,9 +25,9 @@ class StoragePlace
 private constructor(
     private val id: StoragePlaceId,
     val name: Name,
-    val maxVolume: Int,
+    val maxVolume: Volume,
     private var orderId: OrderId? = null,
-    private var occupiedVolume: Int = 0
+    private var occupiedVolume: Volume = Volume.zeroVolume()
 ) : Entity<StoragePlaceId> {
 
     override fun id() = id
@@ -37,14 +38,14 @@ private constructor(
 
     companion object {
 
-        fun create(name: Name, maxVolume: Int) = reconstitute(
+        fun create(name: Name, maxVolume: Volume) = reconstitute(
             StoragePlaceId(), name, maxVolume
         )
 
         internal fun reconstitute(
-            id: StoragePlaceId, name: Name, maxVolume: Int
+            id: StoragePlaceId, name: Name, maxVolume: Volume
         ) = either<StoragePlaceError, StoragePlace> {
-            ensure(maxVolume > 0) {
+            ensure(maxVolume.toInt() > 0) {
                 StoragePlaceError.IncorrectVolume(maxVolume)
             }
 
@@ -52,15 +53,15 @@ private constructor(
         }
     }
 
-    fun canStore(volume: Int) = either<StoragePlaceError, Boolean> {
-        ensure(volume > 0) {
+    fun canStore(volume: Volume) = either<StoragePlaceError, Boolean> {
+        ensure(volume.toInt() > 0) {
             StoragePlaceError.IncorrectVolume(volume)
         }
 
         isEmpty() && volume <= maxVolume
     }
 
-    fun store(orderId: OrderId, volume: Int) = either<StoragePlaceError, Unit> {
+    fun store(orderId: OrderId, volume: Volume) = either<StoragePlaceError, Unit> {
         val canStore = canStore(volume).bind()
         if (!canStore) {
             ensure(isEmpty()) {
@@ -88,7 +89,7 @@ private constructor(
         }
 
         this@StoragePlace.orderId = null
-        this@StoragePlace.occupiedVolume = 0
+        this@StoragePlace.occupiedVolume = Volume.zeroVolume()
     }
 
     override fun hashCode() = id.hashCode()
