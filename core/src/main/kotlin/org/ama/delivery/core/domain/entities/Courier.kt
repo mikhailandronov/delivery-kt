@@ -6,16 +6,22 @@ import arrow.core.raise.withError
 import org.ama.delivery.core.domain.common.AbstractUuidId
 import org.ama.delivery.core.domain.common.AggregateRoot
 import org.ama.delivery.core.domain.common.Location
+import org.ama.delivery.core.domain.common.LocationError
 import org.ama.delivery.core.domain.common.Name
 import org.ama.delivery.core.domain.common.NameError
 import org.ama.delivery.core.domain.common.Speed
+import java.lang.Math.clamp
 import java.util.UUID
+import kotlin.math.abs
+
 
 class CourierId(value: UUID = UUID.randomUUID()) : AbstractUuidId(value)
 
 sealed class CourierError {
     data object CantAddStoragePlace : CourierError()
-    object NoEmptyStoragePlace : CourierError()
+    data object NoEmptyStoragePlace : CourierError()
+    data object MoveAttemptFailed : CourierError()
+
     data class OrderVolumeExceedsAvailableStorage(val orderVolume: Int) : CourierError()
     data class StoragePlaceOperationFailed(val err: StoragePlaceError) : CourierError()
     data class OrderNotFoundInStorage(val order: Order) : CourierError()
@@ -103,5 +109,25 @@ private constructor(
         val distance = location().distanceTo(targetLocation)
         val time = distance.toDouble() / speed.toInt()
         time
+    }
+
+    fun move(destination: Location) = either {
+        val difX = destination.xToInt() - location().xToInt()
+        val difY = destination.yToInt() - location().yToInt()
+        var cruisingRange = speed.toInt()
+
+        val moveX = clamp(difX.toLong(), -cruisingRange, cruisingRange)
+        cruisingRange -= abs(moveX)
+
+        val moveY = clamp(difY.toLong(), -cruisingRange, cruisingRange)
+
+        location = withError({ err: LocationError ->
+            CourierError.MoveAttemptFailed
+        }) {
+            Location.from(
+                location.xToInt() + moveX,
+                location.yToInt() + moveY
+            ).bind()
+        }
     }
 }
