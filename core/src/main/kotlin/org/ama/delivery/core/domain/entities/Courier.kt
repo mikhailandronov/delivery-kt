@@ -1,6 +1,7 @@
 package org.ama.delivery.core.domain.entities
 
 import arrow.core.raise.either
+import arrow.core.raise.ensure
 import arrow.core.raise.withError
 import org.ama.delivery.core.domain.common.AbstractUuidId
 import org.ama.delivery.core.domain.common.AggregateRoot
@@ -14,6 +15,9 @@ class CourierId(value: UUID = UUID.randomUUID()) : AbstractUuidId(value)
 
 sealed class CourierError {
     data object CantAddStoragePlace : CourierError()
+    object NoStoragePlaceAvailable : CourierError()
+    data class OrderVolumeExceedsAvailableStorage(val orderVolume: Int): CourierError()
+    data class StoragePlaceOperationFailed(val err: StoragePlaceError) : CourierError()
 }
 
 class Courier
@@ -62,5 +66,23 @@ private constructor(
 
     fun canTakeOrder(order: Order): Boolean =
         storagePlaces().find { it.isEmpty() && it.maxVolume >= order.volume } != null
+
+    fun takeOrder(order: Order) = either <CourierError, Unit> {
+        val availablePlaces = storagePlaces().filter { it.isEmpty() }
+        ensure(availablePlaces.isNotEmpty()){
+            CourierError.NoStoragePlaceAvailable
+        }
+
+        val suitablePlaces = availablePlaces.filter { it.maxVolume >= order.volume }
+        ensure(suitablePlaces.isNotEmpty()){
+            CourierError.OrderVolumeExceedsAvailableStorage(order.volume)
+        }
+
+        withError({err: StoragePlaceError ->
+            CourierError.StoragePlaceOperationFailed(err)
+        }){
+            suitablePlaces.first().store(order.id(), order.volume)
+        }
+    }
 
 }

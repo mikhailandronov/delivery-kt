@@ -120,7 +120,43 @@ class CourierTests: BehaviorSpec({
     }
 
     context("taking order") {
+        given("a courier with two storage places and two orders"){
+            val courierName = Name.from("Test courier").shouldBeRight()
+            val speed = Speed.minSpeed()
+            val location = Location.minLocation()
+            val courier = Courier.create(courierName, speed, location).shouldBeRight()
 
+            val smallPlaceName = Name.from("Small place").shouldBeRight()
+            courier.addStoragePlace(smallPlaceName, 10).shouldBeRight()
+
+            val orderFitsStorage = Order.create(Location.maxLocation(), 10).shouldBeRight()
+            val orderExceedsStorage = Order.create(Location.maxLocation(), 20).shouldBeRight()
+
+            When("storage place for first order is available"){
+                then("courier takes the order"){
+                    courier.takeOrder(orderFitsStorage).shouldBeRight()
+                    courier.storagePlaces()
+                        .filter { it.orderId() == orderFitsStorage.id() }
+                        .size shouldBe 1
+                    courier.storagePlaces()
+                        .filter { it.orderId() == null }
+                        .size shouldBe 1
+                }
+            }
+            When("storage place for second order is not suitable"){
+                then("courier can't take the order"){
+                    courier.takeOrder(orderExceedsStorage).shouldBeLeft(
+                        CourierError.OrderVolumeExceedsAvailableStorage(orderExceedsStorage.volume)
+                    )
+                    courier.storagePlaces()
+                        .filter { it.orderId() == orderExceedsStorage.id() }
+                        .size shouldBe 0
+                    courier.storagePlaces()
+                        .filter { it.orderId() == null }
+                        .size shouldBe 1
+                }
+            }
+        }
     }
 
     context("completing order") {
