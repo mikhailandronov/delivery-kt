@@ -11,7 +11,7 @@ sealed class LocationError {
 }
 
 @ConsistentCopyVisibility
-data class Location internal constructor(
+data class Location private constructor(
     private val x: Int,
     private val y: Int,
 ) : ValueObject {

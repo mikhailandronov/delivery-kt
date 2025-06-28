@@ -6,6 +6,8 @@ import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.matchers.equals.shouldBeEqual
 import io.kotest.matchers.equals.shouldNotBeEqual
 import io.kotest.matchers.shouldBe
+import org.ama.delivery.core.domain.common.Name
+import org.ama.delivery.core.domain.common.Volume
 import org.ama.delivery.core.domain.entities.OrderId
 import org.ama.delivery.core.domain.entities.StoragePlace
 import org.ama.delivery.core.domain.entities.StoragePlaceError
@@ -14,36 +16,21 @@ import org.ama.delivery.core.domain.entities.StoragePlaceId
 class StoragePlaceTests : BehaviorSpec({
     context("correct creation / reconstitution") {
         given("name and volume values") {
-            val correctName = "Correct storage place"
-            val incorrectName = ""
-            val correctVolumeValue = 10
-            val incorrectVolumeValues = arrayOf(-1, 0)
+            val correctName = Name.from("Correct storage place").shouldBeRight()
+            val correctVolumeValue = Volume.from(10).shouldBeRight()
+            val incorrectVolumeValue = Volume.zeroVolume()
 
-            When("name is incorrect") {
-                then("an error should be returned on creation") {
-                    StoragePlace.create(incorrectName, correctVolumeValue)
-                        .shouldBeLeft(StoragePlaceError.IncorrectName(incorrectName))
-                }
-                then("an error should be returned on reconstitution") {
-                    StoragePlace.reconstitute(
-                        StoragePlaceId(), incorrectName, correctVolumeValue
-                    ).shouldBeLeft(StoragePlaceError.IncorrectName(incorrectName))
-                }
-            }
             When("volume is incorrect") {
-                for (incorrectVolume in incorrectVolumeValues) {
-                    then("${incorrectVolume}: an error should be returned on creation") {
-                        StoragePlace.create(correctName, incorrectVolume)
-                            .shouldBeLeft(StoragePlaceError.IncorrectVolume(incorrectVolume))
+                    then("${incorrectVolumeValue}: an error should be returned on creation") {
+                        StoragePlace.create(correctName, incorrectVolumeValue)
+                            .shouldBeLeft(StoragePlaceError.IncorrectVolume(incorrectVolumeValue))
                     }
-                }
-                for (incorrectVolume in incorrectVolumeValues) {
-                    then("${incorrectVolume}: an error should be returned on reconstitution") {
+                    then("${incorrectVolumeValue}: an error should be returned on reconstitution") {
                         StoragePlace.reconstitute(
-                            StoragePlaceId(), correctName, incorrectVolume
-                        ).shouldBeLeft(StoragePlaceError.IncorrectVolume(incorrectVolume))
+                            StoragePlaceId(), correctName, incorrectVolumeValue
+                        ).shouldBeLeft(StoragePlaceError.IncorrectVolume(incorrectVolumeValue))
                     }
-                }
+
             }
             When("name and volume are correct") {
                 val created = StoragePlace.create(correctName, correctVolumeValue)
@@ -67,24 +54,26 @@ class StoragePlaceTests : BehaviorSpec({
 
     context("checking ability to store") {
         given("an empty storage place") {
-            val place = StoragePlace.create("Test place", 10).shouldBeRight()
+            val name = Name.from("Test place").shouldBeRight()
+            val volume10 = Volume.from(10).shouldBeRight()
+            val place = StoragePlace.create(name, volume10).shouldBeRight()
 
             When("check storage with incorrect volume") {
-                val incorrectVolume = -2
+                val incorrectVolume = Volume.zeroVolume()
                 then("an error should be returned") {
                     place.canStore(incorrectVolume)
                         .shouldBeLeft(StoragePlaceError.IncorrectVolume(incorrectVolume))
                 }
             }
             When("check storage with excessive volume") {
-                val excessiveVolume = 11
+                val excessiveVolume = Volume.from(11).shouldBeRight()
                 then("should return false") {
                     val result = place.canStore(excessiveVolume).shouldBeRight()
                     result shouldBe false
                 }
             }
             When("check storage with correct volume") {
-                val correctVolume = 9
+                val correctVolume = Volume.from(9).shouldBeRight()
                 then("should return true") {
                     val result = place.canStore(correctVolume).shouldBeRight()
                     result shouldBe true
@@ -95,25 +84,27 @@ class StoragePlaceTests : BehaviorSpec({
 
     context("storing items") {
         given("an empty storage place and order id") {
-            val place = StoragePlace.create("Test place", 10).shouldBeRight()
+            val name = Name.from("Test place").shouldBeRight()
+            val volume10 = Volume.from(10).shouldBeRight()
+            val place = StoragePlace.create(name, volume10).shouldBeRight()
             val orderId = OrderId()
 
             When("try to store incorrect volume") {
-                val incorrectVolume = -2
+                val incorrectVolume = Volume.zeroVolume()
                 then("an error should be returned") {
                     place.store(orderId, incorrectVolume)
                         .shouldBeLeft(StoragePlaceError.IncorrectVolume(incorrectVolume))
                 }
             }
             When("try to store excessive volume") {
-                val excessiveVolume = 11
+                val excessiveVolume = Volume.from(11).shouldBeRight()
                 then("an error should be returned") {
                     place.store(orderId, excessiveVolume)
                         .shouldBeLeft(StoragePlaceError.ExcessiveVolume(excessiveVolume))
                 }
             }
             When("try to store correct volume") {
-                val correctVolume = 9
+                val correctVolume = Volume.from(9).shouldBeRight()
                 then("should store it successfully") {
                     place.store(orderId, correctVolume).shouldBeRight()
                     place.occupiedVolume() shouldBe correctVolume
@@ -121,7 +112,7 @@ class StoragePlaceTests : BehaviorSpec({
             }
             When("try to store to occupied storage place") {
                 val storedVolume = place.occupiedVolume()
-                val additionalVolume = 9
+                val additionalVolume = Volume.from(9).shouldBeRight()
                 then("an error should be returned, no changes") {
                     place.store(orderId, additionalVolume)
                         .shouldBeLeft(StoragePlaceError.StorageIsOccupied)
@@ -133,36 +124,51 @@ class StoragePlaceTests : BehaviorSpec({
 
     context("extracting items") {
         given("an occupied storage place") {
-            val place = StoragePlace.create("Test place", 10).shouldBeRight()
-            val orderId = OrderId()
-            place.store(orderId, 10).shouldBeRight()
+            val name = Name.from("Test place").shouldBeRight()
+            val volume10 = Volume.from(10).shouldBeRight()
+            val place = StoragePlace.create(name, volume10).shouldBeRight()
+            val correctOrderId = OrderId()
+            val incorrectOrderId = OrderId()
+            place.store(correctOrderId, volume10).shouldBeRight()
+            place.isEmpty() shouldBe false
+            place.occupiedVolume() shouldBe volume10
 
-            When("try to extract item from occupied storage") {
-                if (!place.isEmpty())
-                    then("should extract it successfully") {
-                        place.extract().shouldBeRight()
-                        place.isEmpty() shouldBe true
-                        place.occupiedVolume() shouldBe 0
-                    }
+            When("try to extract incorrect item from occupied storage") {
+                then("an error should be returned, no changes") {
+                    place.extract(incorrectOrderId).shouldBeLeft(
+                        StoragePlaceError.OrderNotStored(incorrectOrderId)
+                    )
+                    place.isEmpty() shouldBe false
+                    place.occupiedVolume() shouldBe volume10
+                }
+            }
+            When("try to extract correct item from occupied storage") {
+                then("should extract it successfully") {
+                    place.extract(correctOrderId).shouldBeRight()
+                    place.isEmpty() shouldBe true
+                    place.occupiedVolume() shouldBe Volume.zeroVolume()
+                }
             }
             When("try to extract item from empty storage") {
-                if (place.isEmpty())
-                    then("an error should be returned, no changes") {
-                        place.extract().shouldBeLeft(StoragePlaceError.StorageIsEmpty)
-                        place.isEmpty() shouldBe true
-                        place.occupiedVolume() shouldBe 0
-                    }
+                then("an error should be returned, no changes") {
+                    place.extract(correctOrderId).shouldBeLeft(StoragePlaceError.StorageIsEmpty)
+                    place.isEmpty() shouldBe true
+                    place.occupiedVolume() shouldBe Volume.zeroVolume()
+                }
             }
         }
     }
 
     context("equality check") {
         given("three entities: place1 == place2 != place3") {
-            val place1 = StoragePlace.create("Place1", 10).shouldBeRight()
+            val name1 = Name.from("Place1").shouldBeRight()
+            val volume10 = Volume.from(10).shouldBeRight()
+            val place1 = StoragePlace.create(name1, volume10).shouldBeRight()
             val place2 = StoragePlace.reconstitute(
                 place1.id(), place1.name, place1.maxVolume
             ).shouldBeRight()
-            val place3 = StoragePlace.create("Place3", 10).shouldBeRight()
+            val name3 = Name.from("Place3").shouldBeRight()
+            val place3 = StoragePlace.create(name3, volume10).shouldBeRight()
 
             When("ids are equal") {
                 then("place1 should be equal to place2") {

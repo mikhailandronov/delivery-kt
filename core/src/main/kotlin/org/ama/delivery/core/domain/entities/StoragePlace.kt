@@ -4,27 +4,30 @@ import arrow.core.raise.either
 import arrow.core.raise.ensure
 import org.ama.delivery.core.domain.common.Entity
 import org.ama.delivery.core.domain.common.AbstractUuidId
+import org.ama.delivery.core.domain.common.Name
+import org.ama.delivery.core.domain.common.Volume
 import java.util.UUID
 
 class StoragePlaceId(value: UUID = UUID.randomUUID()) : AbstractUuidId(value)
 
 sealed class StoragePlaceError {
-    data class IncorrectName(val name: String) : StoragePlaceError()
-    data class IncorrectVolume(val volume: Int) : StoragePlaceError()
-    data class ExcessiveVolume(val volume: Int) : StoragePlaceError()
+    data class IncorrectVolume(val volume: Volume) : StoragePlaceError()
+    data class ExcessiveVolume(val volume: Volume) : StoragePlaceError()
+    data class OrderNotStored(val orderId: OrderId) : StoragePlaceError()
+
     data object StorageIsOccupied : StoragePlaceError()
     data object StorageIsEmpty : StoragePlaceError()
-    data object StoringNotConfirmed : StoragePlaceError()
+    data object StoringNotAllowed : StoragePlaceError()
 }
 
 
 class StoragePlace
 private constructor(
     private val id: StoragePlaceId,
-    val name: String,
-    val maxVolume: Int,
+    val name: Name,
+    val maxVolume: Volume,
     private var orderId: OrderId? = null,
-    private var occupiedVolume: Int = 0
+    private var occupiedVolume: Volume = Volume.zeroVolume()
 ) : Entity<StoragePlaceId> {
 
     override fun id() = id
@@ -35,28 +38,16 @@ private constructor(
 
     companion object {
 
-        fun create(name: String, maxVolume: Int) = either<StoragePlaceError, StoragePlace> {
-            ensure(name.isNotBlank()) {
-                StoragePlaceError.IncorrectName(name)
-            }
-
-            ensure(maxVolume > 0) {
-                StoragePlaceError.IncorrectVolume(maxVolume)
-            }
-
-            val newId = StoragePlaceId()
-            StoragePlace(newId, name, maxVolume)
-        }
+        fun create(name: Name, maxVolume: Volume) = reconstitute(
+            StoragePlaceId(), name, maxVolume
+        )
 
         internal fun reconstitute(
-            id: StoragePlaceId, name: String, maxVolume: Int
+            id: StoragePlaceId,
+            name: Name,
+            maxVolume: Volume
         ) = either<StoragePlaceError, StoragePlace> {
-
-            ensure(name.isNotBlank()) {
-                StoragePlaceError.IncorrectName(name)
-            }
-
-            ensure(maxVolume > 0) {
+            ensure(maxVolume > Volume.zeroVolume()) {
                 StoragePlaceError.IncorrectVolume(maxVolume)
             }
 
@@ -64,15 +55,15 @@ private constructor(
         }
     }
 
-    fun canStore(volume: Int) = either<StoragePlaceError, Boolean> {
-        ensure(volume > 0) {
+    fun canStore(volume: Volume) = either<StoragePlaceError, Boolean> {
+        ensure(volume > Volume.zeroVolume()) {
             StoragePlaceError.IncorrectVolume(volume)
         }
 
         isEmpty() && volume <= maxVolume
     }
 
-    fun store(orderId: OrderId, volume: Int) = either<StoragePlaceError, Unit> {
+    fun store(orderId: OrderId, volume: Volume) = either<StoragePlaceError, Unit> {
         val canStore = canStore(volume).bind()
         if (!canStore) {
             ensure(isEmpty()) {
@@ -83,20 +74,24 @@ private constructor(
                 StoragePlaceError.ExcessiveVolume(volume)
             }
 
-            raise(StoragePlaceError.StoringNotConfirmed)
+            raise(StoragePlaceError.StoringNotAllowed)
         }
 
         this@StoragePlace.orderId = orderId
         this@StoragePlace.occupiedVolume = volume
     }
 
-    fun extract() = either<StoragePlaceError, Unit> {
+    fun extract(orderId: OrderId) = either<StoragePlaceError, Unit> {
         ensure(!isEmpty()) {
             StoragePlaceError.StorageIsEmpty
         }
 
+        ensure(orderId() == orderId){
+            StoragePlaceError.OrderNotStored(orderId)
+        }
+
         this@StoragePlace.orderId = null
-        this@StoragePlace.occupiedVolume = 0
+        this@StoragePlace.occupiedVolume = Volume.zeroVolume()
     }
 
     override fun hashCode() = id.hashCode()
