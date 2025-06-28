@@ -97,6 +97,7 @@ private constructor(
             CourierError.StoragePlaceOperationFailed(err)
         }) {
             suitablePlaces.first().store(order.id(), order.volume)
+            order.assign(this@Courier)
         }
     }
 
@@ -110,6 +111,7 @@ private constructor(
             CourierError.StoragePlaceOperationFailed(err)
         }) {
             orderStoragePlace.extract(order.id())
+            order.complete()
         }
     }
 
