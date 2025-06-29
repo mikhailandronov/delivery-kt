@@ -27,14 +27,16 @@ class DispatchService : IDispatchService {
             DispatchError.NoSuitableCourier
         }
 
-        val selected = couriersWithTime.minBy { it.second }
+        val selectedCourier = couriersWithTime   // courier with min time
+            .minBy { it.second }
+            .first
 
         withError({ err: CourierError ->
-            DispatchError.CourierOperationFailed(err)
+            DispatchError.CourierRejectedTheOrder(selectedCourier, order)
         }) {
-            selected.first.takeOrder(order).bind()
+            selectedCourier.takeOrder(order).bind()
         }
 
-        selected.first // courier with min time
+        selectedCourier
     }
 }

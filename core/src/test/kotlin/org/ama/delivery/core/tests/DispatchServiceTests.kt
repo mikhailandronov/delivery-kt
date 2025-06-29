@@ -9,9 +9,7 @@ import org.ama.delivery.core.domain.common.Name
 import org.ama.delivery.core.domain.common.Speed
 import org.ama.delivery.core.domain.common.Volume
 import org.ama.delivery.core.domain.entities.Courier
-import org.ama.delivery.core.domain.entities.CourierError
 import org.ama.delivery.core.domain.entities.Order
-import org.ama.delivery.core.domain.entities.OrderError
 import org.ama.delivery.core.domain.entities.OrderId
 import org.ama.delivery.core.domain.entities.OrderStatus
 import org.ama.delivery.core.domain.services.DispatchError
@@ -65,11 +63,7 @@ class DispatchServiceTests : BehaviorSpec({
                     smallOrder.status() shouldBe OrderStatus.Assigned
                     val selectedCourier = dispatcher.dispatch(smallOrder, couriers)
                     selectedCourier.shouldBeLeft(
-                            DispatchError.CourierOperationFailed(
-                                CourierError.OrderOperationFailed(
-                                    OrderError.CantAssignInStatus(OrderStatus.Assigned)
-                            )
-                        )
+                        DispatchError.CourierRejectedTheOrder(mediumCourier, smallOrder)
                     )
                     smallOrder.status() shouldBe OrderStatus.Assigned
                 }
