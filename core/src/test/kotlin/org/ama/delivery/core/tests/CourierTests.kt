@@ -216,8 +216,9 @@ class CourierTests : BehaviorSpec({
             val targetLocation = Location.from(5, 5).shouldBeRight()
 
             When("requested to calculate time to location") {
-                then("correct result is returned")
-                courier.calculateTimeToLocation(targetLocation).shouldBeRight(4)
+                then("correct result is returned") {
+                    courier.calculateTimeToLocation(targetLocation) shouldBe 4
+                }
             }
         }
     }

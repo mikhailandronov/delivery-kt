@@ -126,10 +126,10 @@ private constructor(
         }
     }
 
-    fun calculateTimeToLocation(targetLocation: Location) = either<CourierError, Double> {
+    fun calculateTimeToLocation(targetLocation: Location): Double {
         val distance = location().distanceTo(targetLocation)
         val time = distance.toDouble() / speed.toInt()
-        time
+        return time
     }
 
     fun move(destination: Location) = either {

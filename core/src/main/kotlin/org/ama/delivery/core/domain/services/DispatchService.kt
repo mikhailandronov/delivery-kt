@@ -19,11 +19,7 @@ class DispatchService : IDispatchService {
         val couriersWithTime: List<Pair<Courier, Double>> = couriers
             .filter { it.canTakeOrder(order) }
             .map { courier ->
-                val time = withError({ err: CourierError ->
-                    DispatchError.CourierOperationFailed(err)
-                }) {
-                    courier.calculateTimeToLocation(order.destination).bind()
-                }
+                val time = courier.calculateTimeToLocation(order.destination)
                 courier to time
             }
 
