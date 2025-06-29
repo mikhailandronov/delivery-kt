@@ -43,6 +43,7 @@ private constructor(
         ensure(status() == OrderStatus.Created){
             OrderError.CantAssignInStatus(status())
         }
+
         courierId = courier.id()
         status = OrderStatus.Assigned
     }
