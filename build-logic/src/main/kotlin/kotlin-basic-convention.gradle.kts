@@ -21,6 +21,15 @@ dependencies {
     testImplementation(libs.findLibrary("kotest-runner-junit5").get())
     testImplementation(libs.findLibrary("kotest-assertions-core").get())
     testImplementation(libs.findLibrary("kotest-assertions-arrow").get())
+
+
+    implementation(project.dependencies.platform(
+        libs.findLibrary("koin-bom").get())
+    )
+    implementation(libs.findLibrary("koin-core").get())
+    testImplementation(libs.findLibrary("koin-test").get())
+    testImplementation(libs.findLibrary("koin-test-junit5").get())
+    testImplementation(libs.findLibrary("kotest-extensions-koin").get())
 }
 
 tasks.withType<Test>{
