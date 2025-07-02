@@ -14,6 +14,7 @@ import org.ama.delivery.core.domain.entities.CourierError
 import org.ama.delivery.core.domain.entities.CourierId
 import org.ama.delivery.core.domain.entities.Order
 import org.ama.delivery.core.domain.entities.OrderId
+import org.ama.delivery.core.domain.entities.OrderStatus
 
 class CourierTests : BehaviorSpec({
     context("correct creation / reconstitution") {
@@ -141,7 +142,8 @@ class CourierTests : BehaviorSpec({
             val orderExceedsStorage = Order.create(OrderId(), Location.maxLocation(), volume20).shouldBeRight()
 
             When("storage place for first order is available") {
-                then("courier takes the order") {
+                then("courier takes the order, order is assigned to the courier") {
+                    orderFitsStorage.status() shouldBe OrderStatus.Created
                     courier.takeOrder(orderFitsStorage).shouldBeRight()
                     courier.storagePlaces()
                         .filter { it.orderId() == orderFitsStorage.id() }
@@ -149,10 +151,13 @@ class CourierTests : BehaviorSpec({
                     courier.storagePlaces()
                         .filter { it.orderId() == null }
                         .size shouldBe 1
+                    orderFitsStorage.status() shouldBe OrderStatus.Assigned
+                    orderFitsStorage.courierId() shouldBe courier.id()
                 }
             }
             When("storage place for second order is not suitable") {
-                then("courier can't take the order") {
+                then("courier can't take the order, order doesn't change") {
+                    orderExceedsStorage.status() shouldBe OrderStatus.Created
                     courier.takeOrder(orderExceedsStorage).shouldBeLeft(
                         CourierError.OrderVolumeExceedsAvailableStorage(orderExceedsStorage.volume)
                     )
@@ -162,6 +167,8 @@ class CourierTests : BehaviorSpec({
                     courier.storagePlaces()
                         .filter { it.orderId() == null }
                         .size shouldBe 1
+                    orderExceedsStorage.status() shouldBe OrderStatus.Created
+                    orderExceedsStorage.courierId() shouldBe null
                 }
             }
         }
@@ -181,15 +188,20 @@ class CourierTests : BehaviorSpec({
             courier.takeOrder(correctOrder).shouldBeRight()
 
             When("incorrect order completion requested") {
-                then("courier can't complete the order") {
+                then("courier can't complete the order, order doesn't change") {
                     courier.completeOrder(incorrectOrder).shouldBeLeft(
                         CourierError.OrderNotFoundInStorage(incorrectOrder)
                     )
+                    incorrectOrder.status() shouldBe OrderStatus.Created
                 }
             }
             When("correct order completion requested") {
-                then("courier completes the order successfully") {
+                then("courier completes the order successfully, order is completed") {
+                    correctOrder.status() shouldBe OrderStatus.Assigned
+                    correctOrder.courierId() shouldBe courier.id()
                     courier.completeOrder(correctOrder).shouldBeRight()
+                    correctOrder.status() shouldBe OrderStatus.Completed
+                    correctOrder.courierId() shouldBe null
                 }
             }
         }
@@ -204,8 +216,9 @@ class CourierTests : BehaviorSpec({
             val targetLocation = Location.from(5, 5).shouldBeRight()
 
             When("requested to calculate time to location") {
-                then("correct result is returned")
-                courier.calculateTimeToLocation(targetLocation).shouldBeRight(4)
+                then("correct result is returned") {
+                    courier.calculateTimeToLocation(targetLocation) shouldBe 4
+                }
             }
         }
     }

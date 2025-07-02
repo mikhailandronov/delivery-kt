@@ -22,11 +22,12 @@ class CourierId(value: UUID = UUID.randomUUID()) : AbstractUuidId(value)
 sealed class CourierError {
     data object CantAddStoragePlace : CourierError()
     data object NoEmptyStoragePlace : CourierError()
-    data object MoveAttemptFailed : CourierError()
+    data object MoveOperationFailed : CourierError()
 
     data class OrderVolumeExceedsAvailableStorage(val orderVolume: Volume) : CourierError()
-    data class StoragePlaceOperationFailed(val err: StoragePlaceError) : CourierError()
     data class OrderNotFoundInStorage(val order: Order) : CourierError()
+    data class StoragePlaceOperationFailed(val err: StoragePlaceError) : CourierError()
+    data class OrderOperationFailed(val err: OrderError) : CourierError()
 }
 
 class Courier
@@ -93,10 +94,16 @@ private constructor(
             CourierError.OrderVolumeExceedsAvailableStorage(order.volume)
         }
 
+        withError({ err: OrderError ->
+            CourierError.OrderOperationFailed(err)
+        }) {
+            order.assign(this@Courier).bind()
+        }
+
         withError({ err: StoragePlaceError ->
             CourierError.StoragePlaceOperationFailed(err)
         }) {
-            suitablePlaces.first().store(order.id(), order.volume)
+            suitablePlaces.first().store(order.id(), order.volume).bind()
         }
     }
 
@@ -109,14 +116,20 @@ private constructor(
         withError({ err: StoragePlaceError ->
             CourierError.StoragePlaceOperationFailed(err)
         }) {
-            orderStoragePlace.extract(order.id())
+            orderStoragePlace.extract(order.id()).bind()
+        }
+
+        withError({ err: OrderError ->
+            CourierError.OrderOperationFailed(err)
+        }) {
+            order.complete().bind()
         }
     }
 
-    fun calculateTimeToLocation(targetLocation: Location) = either<CourierError, Double> {
+    fun calculateTimeToLocation(targetLocation: Location): Double {
         val distance = location().distanceTo(targetLocation)
         val time = distance.toDouble() / speed.toInt()
-        time
+        return time
     }
 
     fun move(destination: Location) = either {
@@ -130,7 +143,7 @@ private constructor(
         val moveY = clamp(difY.toLong(), -cruisingRange, cruisingRange)
 
         location = withError({ err: LocationError ->
-            CourierError.MoveAttemptFailed
+            CourierError.MoveOperationFailed
         }) {
             Location.from(
                 location.xToInt() + moveX,
