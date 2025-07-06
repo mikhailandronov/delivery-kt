@@ -20,9 +20,7 @@ import org.ama.delivery.core.domain.services.IDispatchService
 
 class DispatchServiceTests : BehaviorSpec(), KoinTest {
     init {
-        extensions(
-            KoinExtension(testAppModule)
-        )
+        extension(KoinExtension(testAppModule))
 
         val dispatcher: IDispatchService by inject()
 
@@ -49,7 +47,6 @@ class DispatchServiceTests : BehaviorSpec(), KoinTest {
                 val fastCourier = Courier.create(fastName, fastSpeed, courierLocation).shouldBeRight()
 
                 val couriers = listOf(slowCourier, mediumCourier, fastCourier)
-                //val dispatcher: IDispatchService = DispatchService()
 
                 When("try to dispatch an order to an empty list") {
                     then("an error should be returned, order doesn't change") {
