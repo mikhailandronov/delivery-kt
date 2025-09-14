@@ -9,7 +9,7 @@ kotest-arrow = "2.0.0"
 koin-bom = "4.0.3"
 
 postgres-jdbc = "42.7.7"
-h2-jdbc = "2.3.224"
+h2-jdbc = "2.3.232"
 ktorm = "4.1.1"
 
 [libraries]
