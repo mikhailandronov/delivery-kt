@@ -30,6 +30,11 @@ dependencies {
     testImplementation(libs.findLibrary("koin-test").get())
     testImplementation(libs.findLibrary("koin-test-junit5").get())
     testImplementation(libs.findLibrary("kotest-extensions-koin").get())
+
+    implementation(libs.findLibrary("postgres-jdbc-driver").get())
+    implementation(libs.findLibrary("h2-jdbc-driver").get())
+    implementation(libs.findLibrary("ktorm-core").get())
+    implementation(libs.findLibrary("ktorm-support-postgresql").get())
 }
 
 tasks.withType<Test>{

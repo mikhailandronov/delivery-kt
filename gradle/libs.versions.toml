@@ -1,10 +1,16 @@
 [versions]
 kotlin = "2.1.21"
 arrow = "2.1.2"
+
 junit = "5.10.3"
 kotest = "6.0.0.M4"
 kotest-arrow = "2.0.0"
+
 koin-bom = "4.0.3"
+
+postgres-jdbc = "42.7.7"
+h2-jdbc = "2.3.224"
+ktorm = "4.1.1"
 
 [libraries]
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit" }
@@ -22,6 +28,11 @@ koin-core = { module = "io.insert-koin:koin-core" }
 koin-test = { module = "io.insert-koin:koin-test" }
 koin-test-junit5 = { module = "io.insert-koin:koin-test-junit5" }
 kotest-extensions-koin = {module = "io.kotest:kotest-extensions-koin", version.ref = "kotest"}
+
+postgres-jdbc-driver = { module = "org.postgresql:postgresql", version.ref = "postgres-jdbc" }
+h2-jdbc-driver = { module = "com.h2database:h2", version.ref = "h2-jdbc" }
+ktorm-core = { module = "org.ktorm:ktorm-core", version.ref = "ktorm" }
+ktorm-support-postgresql = { module = "org.ktorm:ktorm-support-postgresql", version.ref = "ktorm" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
