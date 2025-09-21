@@ -30,13 +30,16 @@ private constructor(
     fun courierId() = courierId
 
     companion object {
-        fun create(id: OrderId, destination: Location, volume: Volume) = either<OrderError, Order> {
+        fun create(destination: Location, volume: Volume) = either<OrderError, Order> {
             ensure(volume > Volume.zeroVolume()){
                 OrderError.IncorrectVolume(volume)
             }
-            val order = Order(id, destination, volume)
+            val order = reconstitute(OrderId(), destination, volume)
             order
         }
+
+        internal fun reconstitute(id: OrderId, destination: Location, volume: Volume) =
+            Order(id, destination, volume)
     }
 
     fun assign(courier: Courier) = either<OrderError, Unit>{

@@ -23,7 +23,7 @@ class OrderTests: BehaviorSpec({
             val volume5 = Volume.from(5).shouldBeRight()
 
             When("courier is created") {
-                val created = Order.create(id, destination, volume5).shouldBeRight()
+                val created = Order.reconstitute(id, destination, volume5)
                 then("it has correct attributes") {
                     created.id() shouldBeEqual id
                     created.destination shouldBeEqual destination
@@ -41,7 +41,7 @@ class OrderTests: BehaviorSpec({
             val id = OrderId()
             val destination = Location.minLocation()
             val volume5 = Volume.from(5).shouldBeRight()
-            val order = Order.create(id, destination, volume5).shouldBeRight()
+            val order = Order.reconstitute(id, destination, volume5)
             order.status() shouldBe OrderStatus.Created
 
             val name = Name.from("Test courier").shouldBeRight()

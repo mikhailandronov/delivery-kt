@@ -28,9 +28,9 @@ class DispatchServiceTests : BehaviorSpec(), KoinTest {
             given("an order and a list of three couriers") {
                 val orderDestination = Location.maxLocation()
                 val volume5 = Volume.from(5).shouldBeRight()
-                val smallOrder = Order.create(OrderId(), orderDestination, volume5).shouldBeRight()
+                val smallOrder = Order.reconstitute(OrderId(), orderDestination, volume5)
                 val volume15 = Volume.from(15).shouldBeRight()
-                val exceedingVolumeOrder = Order.create(OrderId(), orderDestination, volume15).shouldBeRight()
+                val exceedingVolumeOrder = Order.reconstitute(OrderId(), orderDestination, volume15)
 
                 val courierLocation = Location.minLocation()
 
