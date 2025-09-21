@@ -20,7 +20,7 @@ import org.ama.delivery.core.domain.services.IDispatchService
 
 class DispatchServiceTests : BehaviorSpec(), KoinTest {
     init {
-        extension(KoinExtension(testAppModule))
+        extension(KoinExtension(testModuleCore))
 
         val dispatcher: IDispatchService by inject()
 
