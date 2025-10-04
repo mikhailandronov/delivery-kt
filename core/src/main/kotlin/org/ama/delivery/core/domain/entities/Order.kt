@@ -21,8 +21,8 @@ private constructor(
     private val id: OrderId,
     val destination: Location,
     val volume: Volume,
-    private var status: OrderStatus = OrderStatus.Created,
-    private var courierId: CourierId? = null
+    private var status: OrderStatus,
+    private var courierId: CourierId?
 ) : AggregateRoot<OrderId> {
 
     override fun id() = id
@@ -31,19 +31,24 @@ private constructor(
 
     companion object {
         fun create(destination: Location, volume: Volume) = either<OrderError, Order> {
-            ensure(volume > Volume.zeroVolume()){
+            ensure(volume > Volume.zeroVolume()) {
                 OrderError.IncorrectVolume(volume)
             }
-            val order = reconstitute(OrderId(), destination, volume)
-            order
+            reconstitute(OrderId(), destination, volume)
         }
 
-        internal fun reconstitute(id: OrderId, destination: Location, volume: Volume) =
-            Order(id, destination, volume)
+        fun reconstitute(
+            id: OrderId,
+            destination: Location,
+            volume: Volume,
+            status: OrderStatus = OrderStatus.Created,
+            courierId: CourierId? = null
+        ) =
+            Order(id, destination, volume, status, courierId)
     }
 
-    fun assign(courier: Courier) = either<OrderError, Unit>{
-        ensure(status() == OrderStatus.Created){
+    fun assign(courier: Courier) = either<OrderError, Unit> {
+        ensure(status() == OrderStatus.Created) {
             OrderError.CantAssignInStatus(status())
         }
 
@@ -51,8 +56,8 @@ private constructor(
         status = OrderStatus.Assigned
     }
 
-    fun complete()= either<OrderError, Unit>{
-        ensure(status() == OrderStatus.Assigned){
+    fun complete() = either<OrderError, Unit> {
+        ensure(status() == OrderStatus.Assigned) {
             OrderError.CantCompleteInStatus(status())
         }
         courierId = null

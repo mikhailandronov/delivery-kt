@@ -6,6 +6,7 @@ import org.ama.delivery.infrastructure.adapters.relational.KtormOrderRepository
 import org.ama.delivery.infrastructure.adapters.relational.KtormTransactionManager
 import org.koin.dsl.module
 import org.ktorm.database.Database
+import java.lang.System.getenv
 
 val testModuleInfra = module {
     single<Database> {
@@ -14,11 +15,11 @@ val testModuleInfra = module {
 //            driver = "org.h2.Driver"
 //        )
 
-        Database.connect (
+        Database.connect(
             url = "jdbc:postgresql://158.160.45.79:5432/delivery",
             driver = "org.postgresql.Driver",
-            user = "username",
-            password = "secret"
+            user = getenv("DB_USER") ?: throw IllegalStateException("DB_USER environment variable not set"),
+            password = getenv("DB_PASSWORD") ?: throw IllegalStateException("DB_PASSWORD environment variable not set")
         )
     }
 
