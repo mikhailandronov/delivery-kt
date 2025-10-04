@@ -65,7 +65,7 @@ private constructor(
             courier
         }
 
-        internal fun reconstitute(
+        fun reconstitute(
             id: CourierId, name: Name, speed: Speed, location: Location
         ) = Courier(id, name, speed, location)
 
