@@ -32,46 +32,47 @@ class KtormOrderRepository(private val database: Database) : IOrderRepository {
     }
 
     override fun getOrderById(orderId: OrderId): Order? {
-        val foundOrder = database.from(OrdersTable)
+        return database.from(OrdersTable)
             .select()
             .where { OrdersTable.id eq orderId.toUUID() }
-            .map { row ->
-                val id = OrderId(row[OrdersTable.id]!!)
-                val volume = Volume.from(row[OrdersTable.volume]!!)
-                    .getOrElse { error ->
-                        when (error) {
-                            is VolumeError.IncorrectVolumeValue -> throw IllegalArgumentException("Incorrect volume value: ${error.value}")
-                        }
-                    }
-
-                val destX = row[OrdersTable.destX]!!
-                val destY = row[OrdersTable.destY]!!
-                val destination = Location.from(destX, destY)
-                    .getOrElse { error ->
-                        when (error) {
-                            is LocationError.IncorrectCoordinates -> throw IllegalArgumentException("Incorrect coordinates: (${error.x}, ${error.y})")
-                        }
-                    }
-
-                val status: OrderStatus = row[OrdersTable.status]!!
-                val courierId = CourierId(row[OrdersTable.courierId]!!)
-
-                Order.reconstitute(id, destination, volume, status, courierId)
-            }
+            .map { row -> row.toOrder() }
             .firstOrNull()
-
-        return foundOrder
     }
 
     override fun getRandomCreatedOrder(): Order? {
-        TODO("Not yet implemented")
+        //TODO("Not yet implemented")
+        
+        return null
     }
 
     override fun getAssignedOrders(): List<Order> {
-        TODO("Not yet implemented")
+        return database.from(OrdersTable)
+            .select()
+            .where { OrdersTable.status eq OrderStatus.Assigned }
+            .map { row -> row.toOrder() }
     }
 
     private fun QueryRowSet.toOrder(): Order {
-        TODO("Not yet implemented")
+        val id = OrderId(this[OrdersTable.id]!!)
+        val volume = Volume.from(this[OrdersTable.volume]!!)
+            .getOrElse { error ->
+                when (error) {
+                    is VolumeError.IncorrectVolumeValue -> throw IllegalArgumentException("Incorrect volume value: ${error.value}")
+                }
+            }
+
+        val destX = this[OrdersTable.destX]!!
+        val destY = this[OrdersTable.destY]!!
+        val destination = Location.from(destX, destY)
+            .getOrElse { error ->
+                when (error) {
+                    is LocationError.IncorrectCoordinates -> throw IllegalArgumentException("Incorrect coordinates: (${error.x}, ${error.y})")
+                }
+            }
+
+        val status: OrderStatus = this[OrdersTable.status]!!
+        val courierId = this[OrdersTable.courierId]?.let { CourierId(it) }
+
+        return Order.reconstitute(id, destination, volume, status, courierId)
     }
 }
