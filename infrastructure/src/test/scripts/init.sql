@@ -13,7 +13,7 @@ INSERT INTO orders (id, dest_x, dest_y, volume, status, courier_id) VALUES
     (SELECT id FROM couriers WHERE name = 'Иван Петров')
 ),
 (
-    gen_random_uuid(),
+    uuid('9af55f14-a68b-4947-83f2-84c5c6e584c8'),
     3,
     7,
     2,
@@ -29,5 +29,7 @@ INSERT INTO orders (id, dest_x, dest_y, volume, status, courier_id) VALUES
     (SELECT id FROM couriers WHERE name = 'Сергей Васильев')
 );
 
-select * from orders
-select * from couriers
+select * from orders;
+select * from couriers;
+
+-- delete from orders
