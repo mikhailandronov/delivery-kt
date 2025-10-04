@@ -5,11 +5,13 @@ import io.kotest.assertions.arrow.core.shouldBeRight
 import io.kotest.core.spec.style.BehaviorSpec
 import io.kotest.matchers.equals.shouldBeEqual
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 import org.ama.delivery.core.domain.common.Location
 import org.ama.delivery.core.domain.common.Name
 import org.ama.delivery.core.domain.common.Speed
 import org.ama.delivery.core.domain.common.Volume
 import org.ama.delivery.core.domain.entities.Courier
+import org.ama.delivery.core.domain.entities.CourierId
 import org.ama.delivery.core.domain.entities.Order
 import org.ama.delivery.core.domain.entities.OrderError
 import org.ama.delivery.core.domain.entities.OrderId
@@ -18,20 +20,33 @@ import org.ama.delivery.core.domain.entities.OrderStatus
 class OrderTests: BehaviorSpec({
     context("correct creation") {
         given("order id, location, volume") {
-            val id = OrderId()
             val destination = Location.minLocation()
             val volume5 = Volume.from(5).shouldBeRight()
 
             When("courier is created") {
-                val created = Order.reconstitute(id, destination, volume5)
+                val created = Order.create(destination, volume5).shouldBeRight()
                 then("it has correct attributes") {
-                    created.id() shouldBeEqual id
+                    created.id().shouldBeInstanceOf<OrderId>()
                     created.destination shouldBeEqual destination
                     created.volume shouldBeEqual volume5
                 }
                 then("it has correct default state") {
                     created.status() shouldBe OrderStatus.Created
                     created.courierId() shouldBe null
+                }
+            }
+            When("courier is reconstituted") {
+                val id = OrderId()
+                val courierId = CourierId()
+                val restored = Order.reconstitute(
+                    id, destination, volume5, OrderStatus.Assigned, courierId
+                )
+                then("it has correct attributes") {
+                    restored.id().shouldBeInstanceOf<OrderId>()
+                    restored.destination shouldBeEqual destination
+                    restored.volume shouldBeEqual volume5
+                    restored.status() shouldBe OrderStatus.Assigned
+                    restored.courierId() shouldBe courierId
                 }
             }
         }
