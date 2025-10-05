@@ -20,6 +20,7 @@ import org.ktorm.dsl.map
 import org.ktorm.dsl.select
 import org.ktorm.dsl.where
 import org.ktorm.dsl.insert
+import org.ktorm.dsl.update
 
 class KtormOrderRepository(private val database: Database) : IOrderRepository {
     override fun addNewOrder(order: Order) {
@@ -39,6 +40,15 @@ class KtormOrderRepository(private val database: Database) : IOrderRepository {
     override fun updateOrder(order: Order) {
         if (KtormTransactionContext.get() == null)
             error("Operation should be run in transaction")
+
+        database.update(OrdersTable) {
+            set(it.volume, order.volume.toInt())
+            set(it.destX, order.destination.xToInt())
+            set(it.destY, order.destination.yToInt())
+            set(it.status, order.status())
+            set(it.courierId, order.courierId()?.toUUID())
+            where { it.id eq order.id().toUUID() }
+        }
     }
 
     override fun getOrderById(orderId: OrderId): Order? {

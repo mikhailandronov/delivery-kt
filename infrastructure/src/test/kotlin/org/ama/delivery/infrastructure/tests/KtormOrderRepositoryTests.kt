@@ -8,6 +8,8 @@ import io.kotest.koin.KoinExtension
 import io.kotest.matchers.shouldNotBe
 import org.ama.delivery.core.domain.common.Location
 import org.ama.delivery.core.domain.common.Volume
+import org.ama.delivery.core.domain.entities.CourierId
+import org.ama.delivery.core.domain.entities.Order
 import org.ama.delivery.core.domain.entities.OrderId
 import org.ama.delivery.core.domain.entities.OrderStatus
 import org.ama.delivery.core.ports.outbound.IOrderRepository
@@ -51,14 +53,14 @@ class KtormOrderRepositoryTests : BehaviorSpec(), KoinTest {
                 When("requesting assigned orders") {
                     then("should return orders with Assigned status") {
                         val assignedOrders = repo.getAssignedOrders()
-                        
+
                         assignedOrders shouldNotBe null
 
                         assignedOrders.forEach { order ->
                             order.status() shouldBe OrderStatus.Assigned
                             order.courierId() shouldNotBe null
                         }
-                        
+
                         assignedOrders.isNotEmpty() shouldBe true
                     }
                 }
@@ -91,7 +93,7 @@ class KtormOrderRepositoryTests : BehaviorSpec(), KoinTest {
                     then("should throw IllegalStateException") {
                         val destination = Location.from(1, 2).getOrElse { error("invalid destination in test") }
                         val volume = Volume.from(3).getOrElse { error("invalid volume in test") }
-                        val order = org.ama.delivery.core.domain.entities.Order.create(destination, volume)
+                        val order = Order.create(destination, volume)
                             .getOrElse { error("failed to create order in test") }
 
                         shouldThrow<IllegalStateException> {
@@ -104,7 +106,7 @@ class KtormOrderRepositoryTests : BehaviorSpec(), KoinTest {
                     then("should persist and be retrievable by id") {
                         val destination = Location.from(3, 4).getOrElse { error("invalid destination in test") }
                         val volume = Volume.from(5).getOrElse { error("invalid volume in test") }
-                        val newOrder = org.ama.delivery.core.domain.entities.Order.create(destination, volume)
+                        val newOrder = Order.create(destination, volume)
                             .getOrElse { error("failed to create order in test") }
 
                         txMgr.transactional {
@@ -116,6 +118,71 @@ class KtormOrderRepositoryTests : BehaviorSpec(), KoinTest {
                         found?.id() shouldBe newOrder.id()
                         found?.status() shouldBe OrderStatus.Created
                         found?.courierId() shouldBe null
+                    }
+                }
+            }
+        }
+
+        context("update order") {
+            given("a repository object and transaction manager") {
+                val repo: IOrderRepository by inject()
+                val txMgr: ITransactionManager by inject()
+
+                When("updating an order outside of transaction") {
+                    then("should throw IllegalStateException") {
+                        val destination = Location.from(1, 2)
+                            .getOrElse { error("invalid destination in test") }
+                        val volume = Volume.from(7)
+                            .getOrElse { error("invalid volume in test") }
+                        val order = Order.create(destination, volume)
+                            .getOrElse { error("failed to create order in test") }
+
+                        shouldThrow<IllegalStateException> {
+                            repo.updateOrder(order)
+                        }
+                    }
+                }
+
+                When("updating an existing order within a transaction") {
+                    then("should persist new fields and be retrievable by id") {
+                        val originalDestination = Location.from(2, 3)
+                            .getOrElse { error("invalid destination in test") }
+                        val originalVolume = Volume.from(8)
+                            .getOrElse { error("invalid volume in test") }
+                        val originalOrder = Order.create(originalDestination, originalVolume)
+                            .getOrElse { error("failed to create order in test") }
+
+                        // persist original order
+                        txMgr.transactional {
+                            repo.addNewOrder(originalOrder)
+                        }
+
+                        // prepare updated state
+                        val newDestination = Location.from(3, 7).getOrElse { error("invalid destination in test") }
+                        val newVolume = Volume.from(9).getOrElse { error("invalid volume in test") }
+                        val newCourierId = CourierId(UUID.fromString("e2f7e7aa-cb1e-455c-9e85-b3e776ba9d12"))
+                        val updatedOrder = Order.reconstitute(
+                            originalOrder.id(),
+                            newDestination,
+                            newVolume,
+                            OrderStatus.Assigned,
+                            newCourierId
+                        )
+
+                        // perform update
+                        txMgr.transactional {
+                            repo.updateOrder(updatedOrder)
+                        }
+
+                        // verify
+                        val found = repo.getOrderById(originalOrder.id())
+                        found shouldNotBe null
+                        found?.id() shouldBe originalOrder.id()
+                        found?.status() shouldBe OrderStatus.Assigned
+                        found?.courierId() shouldBe newCourierId
+                        found?.destination?.xToInt() shouldBe 3
+                        found?.destination?.yToInt() shouldBe 7
+                        found?.volume?.toInt() shouldBe 9
                     }
                 }
             }
