@@ -19,16 +19,26 @@ import org.ktorm.dsl.from
 import org.ktorm.dsl.map
 import org.ktorm.dsl.select
 import org.ktorm.dsl.where
+import org.ktorm.dsl.insert
 
 class KtormOrderRepository(private val database: Database) : IOrderRepository {
     override fun addNewOrder(order: Order) {
         if (KtormTransactionContext.get() == null)
-            throw IllegalStateException("Operation should be run in transaction")
+            error("Operation should be run in transaction")
+
+        database.insert(OrdersTable) {
+            set(it.id, order.id().toUUID())
+            set(it.volume, order.volume.toInt())
+            set(it.destX, order.destination.xToInt())
+            set(it.destY, order.destination.yToInt())
+            set(it.status, order.status())
+            set(it.courierId, order.courierId()?.toUUID())
+        }
     }
 
     override fun updateOrder(order: Order) {
         if (KtormTransactionContext.get() == null)
-            throw IllegalStateException("Operation should be run in transaction")
+            error("Operation should be run in transaction")
     }
 
     override fun getOrderById(orderId: OrderId): Order? {
@@ -40,9 +50,11 @@ class KtormOrderRepository(private val database: Database) : IOrderRepository {
     }
 
     override fun getRandomCreatedOrder(): Order? {
-        //TODO("Not yet implemented")
-        
-        return null
+        return database.from(OrdersTable)
+            .select()
+            .where { OrdersTable.status eq OrderStatus.Created }
+            .map { row -> row.toOrder() }
+            .firstOrNull()
     }
 
     override fun getAssignedOrders(): List<Order> {
