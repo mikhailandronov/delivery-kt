@@ -18,6 +18,7 @@ import org.ama.delivery.core.domain.entities.OrderStatus
 import org.ama.delivery.core.domain.services.DispatchError
 import org.ama.delivery.core.domain.services.IDispatchService
 
+@Suppress("unused")
 class DispatchServiceTests : BehaviorSpec(), KoinTest {
     init {
         extension(KoinExtension(testModuleCore))

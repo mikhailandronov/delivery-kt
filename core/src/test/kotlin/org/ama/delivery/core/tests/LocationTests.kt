@@ -11,6 +11,7 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import org.ama.delivery.core.domain.common.Location
 import org.ama.delivery.core.domain.common.LocationError
 
+@Suppress("unused")
 class LocationTests : BehaviorSpec({
     context("correct creation") {
         given("an arbitrary coordinates") {

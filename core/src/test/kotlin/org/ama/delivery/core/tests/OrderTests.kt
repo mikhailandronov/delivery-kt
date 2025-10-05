@@ -17,6 +17,7 @@ import org.ama.delivery.core.domain.entities.OrderError
 import org.ama.delivery.core.domain.entities.OrderId
 import org.ama.delivery.core.domain.entities.OrderStatus
 
+@Suppress("unused")
 class OrderTests: BehaviorSpec({
     context("correct creation") {
         given("order id, location, volume") {

@@ -9,6 +9,7 @@ import org.koin.test.inject
 import org.ama.delivery.core.ports.outbound.ITransactionManager
 import org.ama.delivery.infrastructure.adapters.relational.KtormTransactionContext
 
+@Suppress("unused")
 class KtormTransactionManagerTests : BehaviorSpec(), KoinTest {
     init {
         extension(KoinExtension(testModuleInfra))

@@ -16,6 +16,7 @@ import org.ama.delivery.core.domain.entities.Order
 import org.ama.delivery.core.domain.entities.OrderId
 import org.ama.delivery.core.domain.entities.OrderStatus
 
+@Suppress("unused")
 class CourierTests : BehaviorSpec({
     context("correct creation / reconstitution") {
         given("name, speed, location") {
