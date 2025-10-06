@@ -9,18 +9,14 @@ import org.ama.delivery.core.domain.common.Speed
 import org.ama.delivery.core.domain.common.SpeedError
 import org.ama.delivery.core.domain.entities.Courier
 import org.ama.delivery.core.domain.entities.CourierId
-import org.ama.delivery.core.domain.entities.OrderStatus
 import org.ama.delivery.core.ports.outbound.ICourierRepository
 import org.ktorm.database.Database
 import org.ktorm.dsl.QueryRowSet
-import org.ktorm.dsl.and
+import org.ktorm.dsl.delete
 import org.ktorm.dsl.eq
-import org.ktorm.dsl.exists
 import org.ktorm.dsl.from
 import org.ktorm.dsl.insert
 import org.ktorm.dsl.map
-import org.ktorm.dsl.not
-import org.ktorm.dsl.isNotNull
 import org.ktorm.dsl.select
 import org.ktorm.dsl.update
 import org.ktorm.dsl.where
@@ -37,6 +33,16 @@ class KtormCourierRepository(private val database: Database) : ICourierRepositor
             set(it.locationX, courier.location().xToInt())
             set(it.locationY, courier.location().yToInt())
         }
+
+        courier.storagePlaces().forEach { place ->
+            database.insert(StoragePlacesTable) {
+                set(it.id, place.id().toUUID())
+                set(it.courierId, courier.id().toUUID())
+                set(it.name, place.name.toString())
+                set(it.maxVolume, place.maxVolume.toInt())
+                set(it.orderId, place.orderId()?.toUUID())
+            }
+        }
     }
 
     override fun updateCourier(courier: Courier) {
@@ -48,7 +54,23 @@ class KtormCourierRepository(private val database: Database) : ICourierRepositor
             set(it.speed, courier.speed.toInt())
             set(it.locationX, courier.location().xToInt())
             set(it.locationY, courier.location().yToInt())
-            where { it.id eq courier.id().toUUID() }
+            where {
+                it.id eq courier.id().toUUID()
+            }
+        }
+
+        database.delete(StoragePlacesTable) {
+            it.courierId eq courier.id().toUUID()
+        }
+
+        courier.storagePlaces().forEach { place ->
+            database.insert(StoragePlacesTable) {
+                set(it.id, place.id().toUUID())
+                set(it.courierId, courier.id().toUUID())
+                set(it.name, place.name.toString())
+                set(it.maxVolume, place.maxVolume.toInt())
+                set(it.orderId, place.orderId()?.toUUID())
+            }
         }
     }
 

@@ -25,7 +25,7 @@ object OrdersTable : Table<Nothing>("orders") {
 object StoragePlacesTable : Table<Nothing>("storage_places") {
     val id = uuid("id").primaryKey()
     val name = text("name")
-    val totalVolume = int("total_volume")
+    val maxVolume = int("total_volume")
     val orderId = uuid("order_id")
     val courierId = uuid("courier_id")
 }
