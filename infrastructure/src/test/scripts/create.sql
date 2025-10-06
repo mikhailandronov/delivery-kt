@@ -19,15 +19,6 @@ CREATE TABLE orders (
     , FOREIGN KEY (courier_id) REFERENCES couriers(id) ON DELETE SET NULL
 );
 
--- Создание таблицы outbox
-CREATE TABLE outbox (
-    id UUID PRIMARY KEY,
-    type TEXT NOT NULL,
-    content TEXT NOT NULL,
-    occurred_on_utc TIMESTAMPTZ NOT NULL,
-    processed_on_utc TIMESTAMPTZ
-);
-
 -- Создание таблицы storage_places
 CREATE TABLE storage_places (
     id UUID PRIMARY KEY,
@@ -41,3 +32,12 @@ CREATE TABLE storage_places (
 
 -- Создание индекса на courier_id в таблице storage_places
 CREATE INDEX IX_storage_places_courier_id ON storage_places (courier_id);
+
+-- Создание таблицы outbox
+CREATE TABLE outbox (
+    id UUID PRIMARY KEY,
+    type TEXT NOT NULL,
+    content TEXT NOT NULL,
+    occurred_on_utc TIMESTAMPTZ NOT NULL,
+    processed_on_utc TIMESTAMPTZ
+);
