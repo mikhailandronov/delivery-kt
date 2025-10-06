@@ -21,3 +21,11 @@ object OrdersTable : Table<Nothing>("orders") {
     val status = enum<OrderStatus>("status")
     val courierId = uuid("courier_id")
 }
+
+object StoragePlacesTable : Table<Nothing>("storage_places") {
+    val id = uuid("id").primaryKey()
+    val name = text("name")
+    val totalVolume = int("total_volume")
+    val orderId = uuid("order_id")
+    val courierId = uuid("courier_id")
+}

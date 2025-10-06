@@ -1,7 +1,9 @@
 package org.ama.delivery.infrastructure.tests
 
+import org.ama.delivery.core.ports.outbound.ICourierRepository
 import org.ama.delivery.core.ports.outbound.IOrderRepository
 import org.ama.delivery.core.ports.outbound.ITransactionManager
+import org.ama.delivery.infrastructure.adapters.relational.KtormCourierRepository
 import org.ama.delivery.infrastructure.adapters.relational.KtormOrderRepository
 import org.ama.delivery.infrastructure.adapters.relational.KtormTransactionManager
 import org.koin.dsl.module
@@ -25,4 +27,5 @@ val testModuleInfra = module {
 
     single<ITransactionManager> { KtormTransactionManager(get ()) }
     single<IOrderRepository> { KtormOrderRepository(get()) }
+    single<ICourierRepository> { KtormCourierRepository(get()) }
 }
