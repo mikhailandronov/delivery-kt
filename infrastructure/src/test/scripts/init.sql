@@ -28,7 +28,7 @@ select * from orders;
 select * from couriers;
 select * from storage_places;
 
-select c.name, sp.courier_id as sp_c_id , sp.name , o.status , o.volume , o.courier_id as o_c_id
+select c.name, sp.courier_id as sp_c_id , sp.name , sp.total_volume , o.status , o.volume , o.courier_id as o_c_id
 from
 	storage_places sp
 	inner join couriers c on (c.id = sp.courier_id)
@@ -36,11 +36,12 @@ from
 where
 	sp.order_id is null
 
-select sp.courier_id , sp."name" , sp.total_volume , sp.order_id
+select sp.courier_id , c."name" , sp."name" , sp.total_volume , sp.order_id
 from
 	storage_places sp
+	inner join couriers c on sp.courier_id = c.id
+where
+	sp.courier_id not in (
+		select sp2.courier_id from storage_places sp2 where not sp2.order_id is null
+	)
 
-
-
--- delete from orders
-update orders set courier_id=null where status = 'Created'

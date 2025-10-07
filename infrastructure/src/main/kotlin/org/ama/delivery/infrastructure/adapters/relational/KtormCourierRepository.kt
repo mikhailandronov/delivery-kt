@@ -15,8 +15,11 @@ import org.ktorm.dsl.QueryRowSet
 import org.ktorm.dsl.delete
 import org.ktorm.dsl.eq
 import org.ktorm.dsl.from
+import org.ktorm.dsl.innerJoin
 import org.ktorm.dsl.insert
+import org.ktorm.dsl.isNotNull
 import org.ktorm.dsl.map
+import org.ktorm.dsl.notInList
 import org.ktorm.dsl.select
 import org.ktorm.dsl.update
 import org.ktorm.dsl.where
@@ -75,7 +78,8 @@ class KtormCourierRepository(private val database: Database) : ICourierRepositor
     }
 
     override fun getCourierById(courierId: CourierId): Courier? {
-        return database.from(CouriersTable)
+        return database
+            .from(CouriersTable)
             .select()
             .where { CouriersTable.id eq courierId.toUUID() }
             .map { row -> row.toCourier() }
@@ -83,9 +87,20 @@ class KtormCourierRepository(private val database: Database) : ICourierRepositor
     }
 
     override fun getFreeCouriers(): List<Courier> {
-        return database.from(CouriersTable)
-            .select()
-            .map { row -> row.toCourier() }
+        // Подзапрос для получения ID курьеров, у которых есть заказ
+        val subquery = database
+            .from(StoragePlacesTable)
+            .select(StoragePlacesTable.courierId)
+            .where { StoragePlacesTable.orderId.isNotNull() }
+
+        // Основной запрос
+        val query = database
+            .from(StoragePlacesTable)
+            .innerJoin(CouriersTable, on = StoragePlacesTable.courierId eq CouriersTable.id)
+            .select(CouriersTable.columns + StoragePlacesTable.columns) // Выбираем все колонки из обеих таблиц
+            .where { StoragePlacesTable.courierId notInList subquery }
+
+        return query.map { row -> row.toCourier() }
     }
 
     private fun QueryRowSet.toCourier(): Courier {
