@@ -33,6 +33,7 @@ class KtormCourierRepositoryTests : BehaviorSpec(), KoinTest {
                         val foundCourier = repo.getCourierById(existingId)
                         foundCourier shouldNotBe null
                         foundCourier?.id() shouldBe existingId
+                        foundCourier?.storagePlaces()?.count() shouldBe 2
                     }
                 }
 

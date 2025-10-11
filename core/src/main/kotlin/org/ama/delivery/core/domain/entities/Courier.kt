@@ -36,7 +36,7 @@ private constructor(
     val name: Name,
     val speed: Speed,
     private var location: Location,
-    private val storagePlaces: MutableList<StoragePlace> = mutableListOf()
+    private val storagePlaces: MutableList<StoragePlace>
 ) : AggregateRoot<CourierId> {
 
     override fun id() = id
@@ -66,9 +66,8 @@ private constructor(
         }
 
         fun reconstitute(
-            id: CourierId, name: Name, speed: Speed, location: Location
-        ) = Courier(id, name, speed, location)
-
+            id: CourierId, name: Name, speed: Speed, location: Location, storagePlaces: MutableList<StoragePlace> = mutableListOf()
+        ) = Courier(id, name, speed, location, storagePlaces)
     }
 
     fun addStoragePlace(name: Name, volume: Volume) = either<CourierError, Unit> {

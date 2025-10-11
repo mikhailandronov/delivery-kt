@@ -42,7 +42,7 @@ private constructor(
             StoragePlaceId(), name, maxVolume
         )
 
-        internal fun reconstitute(
+        fun reconstitute(
             id: StoragePlaceId,
             name: Name,
             maxVolume: Volume

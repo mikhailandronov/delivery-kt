@@ -7,10 +7,15 @@ import org.ama.delivery.core.domain.common.Name
 import org.ama.delivery.core.domain.common.NameError
 import org.ama.delivery.core.domain.common.Speed
 import org.ama.delivery.core.domain.common.SpeedError
+import org.ama.delivery.core.domain.common.Volume
+import org.ama.delivery.core.domain.common.VolumeError
 import org.ama.delivery.core.domain.entities.Courier
 import org.ama.delivery.core.domain.entities.CourierId
+import org.ama.delivery.core.domain.entities.StoragePlace
+import org.ama.delivery.core.domain.entities.StoragePlaceId
 import org.ama.delivery.core.ports.outbound.ICourierRepository
 import org.ktorm.database.Database
+import org.ktorm.dsl.Query
 import org.ktorm.dsl.QueryRowSet
 import org.ktorm.dsl.delete
 import org.ktorm.dsl.eq
@@ -18,6 +23,7 @@ import org.ktorm.dsl.from
 import org.ktorm.dsl.innerJoin
 import org.ktorm.dsl.insert
 import org.ktorm.dsl.isNotNull
+import org.ktorm.dsl.leftJoin
 import org.ktorm.dsl.map
 import org.ktorm.dsl.notInList
 import org.ktorm.dsl.select
@@ -78,11 +84,13 @@ class KtormCourierRepository(private val database: Database) : ICourierRepositor
     }
 
     override fun getCourierById(courierId: CourierId): Courier? {
-        return database
+        val query = database
             .from(CouriersTable)
-            .select()
+            .leftJoin(StoragePlacesTable, on = StoragePlacesTable.courierId eq CouriersTable.id)
+            .select(CouriersTable.columns + StoragePlacesTable.columns)
             .where { CouriersTable.id eq courierId.toUUID() }
-            .map { row -> row.toCourier() }
+
+        return constructCouriersFrom(query)
             .firstOrNull()
     }
 
@@ -100,7 +108,56 @@ class KtormCourierRepository(private val database: Database) : ICourierRepositor
             .select(CouriersTable.columns + StoragePlacesTable.columns) // Выбираем все колонки из обеих таблиц
             .where { StoragePlacesTable.courierId notInList subquery }
 
-        return query.map { row -> row.toCourier() }
+        return constructCouriersFrom(query)
+    }
+
+    private fun constructCouriersFrom(query: Query): List<Courier> = query
+        .map { row -> row.toCourierAndStoragePlacePair() }
+        .groupBy { it.first.id() } // by courier.id
+        .map {
+            val list = it.value
+            val courier = list.first().first
+            val places = mutableListOf<StoragePlace>()
+            list.forEach { pair ->
+                val place = pair.second
+                places.add(place)
+            }
+            Courier.reconstitute(
+                courier.id(),
+                courier.name,
+                courier.speed,
+                courier.location(),
+                places
+            )
+        }
+
+    private fun QueryRowSet.toCourierAndStoragePlacePair(): Pair<Courier, StoragePlace> {
+        return Pair(this.toCourier(), this.toStoragePlace())
+    }
+
+    private fun QueryRowSet.toStoragePlace(): StoragePlace {
+        val id = StoragePlaceId(this[StoragePlacesTable.id]!!)
+
+        val name = Name.from(this[StoragePlacesTable.name]!!)
+            .getOrElse { error ->
+                when (error) {
+                    is NameError.IncorrectNameValue -> throw IllegalArgumentException("Incorrect storage place name value: ${error.value}")
+                }
+            }
+
+        val maxVolume = Volume.from(this[StoragePlacesTable.maxVolume]!!)
+            .getOrElse { error ->
+                when (error) {
+                    is VolumeError.IncorrectVolumeValue -> throw IllegalArgumentException("Incorrect storage place volume value: ${error.value}")
+                }
+            }
+
+        val place = StoragePlace.reconstitute(id, name, maxVolume)
+            .getOrElse {
+                throw IllegalArgumentException("Cannot create storage place")
+            }
+
+        return place
     }
 
     private fun QueryRowSet.toCourier(): Courier {
@@ -109,14 +166,14 @@ class KtormCourierRepository(private val database: Database) : ICourierRepositor
         val name = Name.from(this[CouriersTable.name]!!)
             .getOrElse { error ->
                 when (error) {
-                    is NameError.IncorrectNameValue -> throw IllegalArgumentException("Incorrect name value: ${error.value}")
+                    is NameError.IncorrectNameValue -> throw IllegalArgumentException("Incorrect courier name value: ${error.value}")
                 }
             }
 
         val speed = Speed.from(this[CouriersTable.speed]!!)
             .getOrElse { error ->
                 when (error) {
-                    is SpeedError.IncorrectSpeedValue -> throw IllegalArgumentException("Incorrect speed value: ${error.value}")
+                    is SpeedError.IncorrectSpeedValue -> throw IllegalArgumentException("Incorrect courier speed value: ${error.value}")
                 }
             }
 
@@ -125,12 +182,13 @@ class KtormCourierRepository(private val database: Database) : ICourierRepositor
         val location = Location.from(locX, locY)
             .getOrElse { error ->
                 when (error) {
-                    is LocationError.IncorrectCoordinates -> throw IllegalArgumentException("Incorrect coordinates: (${error.x}, ${error.y})")
+                    is LocationError.IncorrectCoordinates -> throw IllegalArgumentException("Incorrect courier coordinates: (${error.x}, ${error.y})")
                 }
             }
 
         return Courier.reconstitute(id, name, speed, location)
     }
+
 }
 
 
