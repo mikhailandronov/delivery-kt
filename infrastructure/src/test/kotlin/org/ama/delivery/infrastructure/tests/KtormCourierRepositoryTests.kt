@@ -81,5 +81,68 @@ class KtormCourierRepositoryTests : BehaviorSpec(), KoinTest {
                 }
             }
         }
+
+        context("update courier") {
+            given("a repository object and transaction manager") {
+                val repo: ICourierRepository by inject()
+                val txMgr: ITransactionManager by inject()
+
+                When("try to update existing Courier") {
+                    then("the Courier should be updated successfully") {
+                        val existingId = CourierId(UUID.fromString("e2f7e7aa-cb1e-455c-9e85-b3e776ba9d12"))
+                        val existingCourier = repo.getCourierById(existingId)
+
+                        existingCourier shouldNotBe null
+                        
+                        txMgr.transactional {
+                            repo.updateCourier(existingCourier!!)
+                        }
+                        
+                        // Verify the courier was updated
+                        val updatedCourier = repo.getCourierById(existingId)
+                        updatedCourier shouldNotBe null
+                        updatedCourier?.id() shouldBe existingId
+                        updatedCourier?.name shouldBe existingCourier?.name
+                        updatedCourier?.speed shouldBe existingCourier?.speed
+                        updatedCourier?.location() shouldBe existingCourier?.location()
+                        updatedCourier?.storagePlaces()?.count() shouldBe existingCourier?.storagePlaces()?.count()
+                    }
+                }
+
+                When("try to update Courier with modified data") {
+                    then("the Courier should be updated correctly (and then updated back)") {
+                        val existingId = CourierId(UUID.fromString("e2f7e7aa-cb1e-455c-9e85-b3e776ba9d12"))
+                        val existingCourier = repo.getCourierById(existingId)
+
+                        existingCourier shouldNotBe null
+                        existingCourier?.name.toString() shouldBe "Анна Сидорова"
+                        
+                        // Create updated courier with same ID but new name
+                        val newName = Name.from("Updated Name").shouldBeRight()
+                        val updatedCourier = Courier.reconstitute(
+                            existingCourier!!.id(),
+                            newName,
+                            existingCourier.speed,
+                            existingCourier.location(),
+                            existingCourier.storagePlaces().toMutableList()
+                        )
+
+                        txMgr.transactional {
+                            repo.updateCourier(updatedCourier)
+                        }
+                        
+                        // Verify the courier was updated
+                        val retrievedCourier = repo.getCourierById(existingId)
+                        retrievedCourier shouldNotBe null
+                        retrievedCourier?.id() shouldBe existingId
+                        retrievedCourier?.name shouldBe newName
+
+                        txMgr.transactional {
+                            repo.updateCourier(existingCourier)
+                        }
+                    }
+                }
+            }
+        }
     }
 }
