@@ -18,11 +18,10 @@ import org.ama.delivery.core.domain.entities.OrderStatus
 import org.ama.delivery.core.domain.services.DispatchError
 import org.ama.delivery.core.domain.services.IDispatchService
 
+@Suppress("unused")
 class DispatchServiceTests : BehaviorSpec(), KoinTest {
     init {
-        extensions(
-            KoinExtension(testAppModule)
-        )
+        extension(KoinExtension(testModuleCore))
 
         val dispatcher: IDispatchService by inject()
 
@@ -30,9 +29,9 @@ class DispatchServiceTests : BehaviorSpec(), KoinTest {
             given("an order and a list of three couriers") {
                 val orderDestination = Location.maxLocation()
                 val volume5 = Volume.from(5).shouldBeRight()
-                val smallOrder = Order.create(OrderId(), orderDestination, volume5).shouldBeRight()
+                val smallOrder = Order.reconstitute(OrderId(), orderDestination, volume5)
                 val volume15 = Volume.from(15).shouldBeRight()
-                val exceedingVolumeOrder = Order.create(OrderId(), orderDestination, volume15).shouldBeRight()
+                val exceedingVolumeOrder = Order.reconstitute(OrderId(), orderDestination, volume15)
 
                 val courierLocation = Location.minLocation()
 
@@ -49,7 +48,6 @@ class DispatchServiceTests : BehaviorSpec(), KoinTest {
                 val fastCourier = Courier.create(fastName, fastSpeed, courierLocation).shouldBeRight()
 
                 val couriers = listOf(slowCourier, mediumCourier, fastCourier)
-                //val dispatcher: IDispatchService = DispatchService()
 
                 When("try to dispatch an order to an empty list") {
                     then("an error should be returned, order doesn't change") {

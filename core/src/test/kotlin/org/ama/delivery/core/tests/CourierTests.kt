@@ -16,6 +16,7 @@ import org.ama.delivery.core.domain.entities.Order
 import org.ama.delivery.core.domain.entities.OrderId
 import org.ama.delivery.core.domain.entities.OrderStatus
 
+@Suppress("unused")
 class CourierTests : BehaviorSpec({
     context("correct creation / reconstitution") {
         given("name, speed, location") {
@@ -93,8 +94,8 @@ class CourierTests : BehaviorSpec({
 
             val volume10 = Volume.from(10).shouldBeRight()
             val volume20 = Volume.from(20).shouldBeRight()
-            val orderFitsStorage = Order.create(OrderId(), Location.maxLocation(), volume10).shouldBeRight()
-            val orderExceedsStorage = Order.create(OrderId(), Location.maxLocation(), volume20).shouldBeRight()
+            val orderFitsStorage = Order.reconstitute(OrderId(), Location.maxLocation(), volume10)
+            val orderExceedsStorage = Order.reconstitute(OrderId(), Location.maxLocation(), volume20)
 
             When("free capacity is available for the order") {
                 then("courier can take order") {
@@ -115,7 +116,7 @@ class CourierTests : BehaviorSpec({
             val courier = Courier.reconstitute(CourierId(), name, speed, location)
 
             val volume1 = Volume.from(1).shouldBeRight()
-            val order = Order.create(OrderId(), Location.maxLocation(), volume1).shouldBeRight()
+            val order = Order.reconstitute(OrderId(), Location.maxLocation(), volume1)
 
             When("check with any order volume") {
                 then("courier can not take order") {
@@ -138,8 +139,8 @@ class CourierTests : BehaviorSpec({
 
             val volume10 = Volume.from(10).shouldBeRight()
             val volume20 = Volume.from(20).shouldBeRight()
-            val orderFitsStorage = Order.create(OrderId(), Location.maxLocation(), volume10).shouldBeRight()
-            val orderExceedsStorage = Order.create(OrderId(), Location.maxLocation(), volume20).shouldBeRight()
+            val orderFitsStorage = Order.reconstitute(OrderId(), Location.maxLocation(), volume10)
+            val orderExceedsStorage = Order.reconstitute(OrderId(), Location.maxLocation(), volume20)
 
             When("storage place for first order is available") {
                 then("courier takes the order, order is assigned to the courier") {
@@ -182,8 +183,8 @@ class CourierTests : BehaviorSpec({
             val courier = Courier.create(courierName, speed, location).shouldBeRight()
             val volume10 = Volume.from(10).shouldBeRight()
             val volume20 = Volume.from(20).shouldBeRight()
-            val correctOrder = Order.create(OrderId(), Location.maxLocation(), volume10).shouldBeRight()
-            val incorrectOrder = Order.create(OrderId(), Location.maxLocation(), volume20).shouldBeRight()
+            val correctOrder = Order.reconstitute(OrderId(), Location.maxLocation(), volume10)
+            val incorrectOrder = Order.reconstitute(OrderId(), Location.maxLocation(), volume20)
 
             courier.takeOrder(correctOrder).shouldBeRight()
 

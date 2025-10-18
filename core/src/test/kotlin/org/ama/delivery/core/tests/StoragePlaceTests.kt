@@ -13,6 +13,7 @@ import org.ama.delivery.core.domain.entities.StoragePlace
 import org.ama.delivery.core.domain.entities.StoragePlaceError
 import org.ama.delivery.core.domain.entities.StoragePlaceId
 
+@Suppress("unused")
 class StoragePlaceTests : BehaviorSpec({
     context("correct creation / reconstitution") {
         given("name and volume values") {
