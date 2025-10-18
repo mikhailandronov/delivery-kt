@@ -1,3 +1,4 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 
 // Применение kotlin("jvm") к любому подпроекту, использующему `id("kotlin-basic-convention")`
@@ -8,6 +9,19 @@ plugins {
 // Настройка jvmToolchain для любого подпроекта, использующего `id("kotlin-basic-convention")`
 extensions.configure<KotlinJvmProjectExtension> {
     jvmToolchain(21)
+}
+
+// Set Java compatibility to match Kotlin JVM target
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+// Explicitly set Kotlin JVM target to match toolchain
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_21)
+    }
 }
 
 val libs = extensions.getByType<VersionCatalogsExtension>().named("libs")
