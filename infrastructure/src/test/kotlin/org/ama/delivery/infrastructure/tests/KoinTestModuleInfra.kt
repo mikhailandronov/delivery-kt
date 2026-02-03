@@ -18,7 +18,7 @@ val testModuleInfra = module {
 //        )
 
         Database.connect(
-            url = "jdbc:postgresql://158.160.45.79:5432/delivery",
+            url = "jdbc:postgresql://localhost:5432/delivery",
             driver = "org.postgresql.Driver",
             user = getenv("DB_USER") ?: throw IllegalStateException("DB_USER environment variable not set"),
             password = getenv("DB_PASSWORD") ?: throw IllegalStateException("DB_PASSWORD environment variable not set")
